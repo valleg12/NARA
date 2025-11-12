@@ -78,6 +78,7 @@ exports.handler = async (event, context) => {
     const { eventStream } = streamResult.value;
     let answer = "";
     const actions = [];
+    let lastAgentMessage = null;
 
     for await (const event of eventStream) {
       if (!event) continue;
@@ -90,26 +91,23 @@ exports.handler = async (event, context) => {
         actions.push(event.action);
       }
 
-      if (event.type === "generation_tokens" && event.classification === "tokens" && event.text) {
+      if (event.type === "generation_tokens" && event.text) {
         answer += event.text;
       }
 
       if (event.type === "agent_message_success") {
-        answer = typeof event.message.content === "string" ? event.message.content : answer;
+        lastAgentMessage = event.message;
+        const parsed = extractText(event.message?.content);
+        if (parsed) {
+          answer = parsed;
+        }
       }
-    }
-
-    if (!answer) {
-      return {
-        statusCode: 502,
-        body: JSON.stringify({ error: "Réponse vide renvoyée par l'agent Dust." }),
-      };
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: answer,
+        message: answer || extractText(lastAgentMessage?.content) || "",
         actions,
         conversationId: conversation.sId,
       }),
@@ -122,4 +120,45 @@ exports.handler = async (event, context) => {
     };
   }
 };
+
+/**
+ * Essaie d'extraire une chaîne de caractères depuis les structures de contenu Dust.
+ */
+function extractText(content) {
+  if (!content) {
+    return "";
+  }
+
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((item) => extractText(item))
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+  }
+
+  if (typeof content === "object") {
+    if (typeof content.text === "string") {
+      return content.text;
+    }
+    if (typeof content.content === "string") {
+      return content.content;
+    }
+    if (Array.isArray(content.content)) {
+      return extractText(content.content);
+    }
+    if (Array.isArray(content.parts)) {
+      return extractText(content.parts);
+    }
+    if (typeof content.value === "string") {
+      return content.value;
+    }
+  }
+
+  return "";
+}
 
