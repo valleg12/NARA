@@ -113,7 +113,8 @@ const Guardians = () => {
       });
       setAgentResponse(response);
     } catch (error) {
-      setAgentError(error instanceof Error ? error.message : "Une erreur inattendue est survenue.");
+      const message = error instanceof Error ? error.message : "Une erreur inattendue est survenue.";
+      setAgentError(message);
     } finally {
       setIsAgentLoading(false);
     }
@@ -378,7 +379,7 @@ const Guardians = () => {
                         : "Consulter l'agent Dust"}
                     </Button>
                     {agentError && (
-                      <p className="text-sm text-red-600 text-center">{agentError}</p>
+                      <div className="text-sm text-red-600 text-center whitespace-pre-wrap">{agentError}</div>
                     )}
                     {agentResponse && (
                       <div className="p-4 rounded-lg border border-border/50 bg-muted/30 text-left space-y-2">
