@@ -3,6 +3,8 @@ import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import DustService from "@/services/DustService";
 
 const contracts = [
   {
@@ -33,6 +35,34 @@ const contracts = [
 
 const Guardians = () => {
   const [selectedContract, setSelectedContract] = useState<number | null>(null);
+  const [agentMessage, setAgentMessage] = useState("");
+  const [agentResponse, setAgentResponse] = useState<string | null>(null);
+  const [agentError, setAgentError] = useState<string | null>(null);
+  const [isAgentLoading, setIsAgentLoading] = useState(false);
+
+  const handleAskAgent = async () => {
+    if (!agentMessage.trim()) {
+      setAgentError("Veuillez saisir une question ou un besoin avant d'appeler l'agent.");
+      return;
+    }
+
+    setIsAgentLoading(true);
+    setAgentError(null);
+    setAgentResponse(null);
+
+    try {
+      const response = await DustService.callAgent({
+        message: agentMessage,
+        username: "Manager",
+        fullName: "Utilisateur NARA",
+      });
+      setAgentResponse(response);
+    } catch (error) {
+      setAgentError(error instanceof Error ? error.message : "Une erreur inattendue est survenue.");
+    } finally {
+      setIsAgentLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -197,11 +227,48 @@ const Guardians = () => {
               </Card>
             ) : (
               <Card className="border-border/50">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <FileText className="w-12 h-12 text-foreground/30 mb-4" />
-                  <p className="text-foreground/60">
-                    Sélectionnez un contrat pour voir les détails
-                  </p>
+                <CardContent className="flex flex-col gap-6 items-center justify-center py-16">
+                  <div className="flex flex-col items-center text-center gap-2">
+                    <FileText className="w-12 h-12 text-foreground/30" />
+                    <p className="text-foreground/60">
+                      Sélectionnez un contrat pour voir les détails
+                    </p>
+                  </div>
+
+                  <div className="w-full max-w-xl space-y-4">
+                    <div className="text-center space-y-1">
+                      <h3 className="font-display text-lg font-semibold text-foreground">
+                        Besoin d'une analyse rapide ?
+                      </h3>
+                      <p className="text-sm text-foreground/70">
+                        Posez votre question à l'agent juridique NARA pour obtenir un retour instantané.
+                      </p>
+                    </div>
+                    <Textarea
+                      value={agentMessage}
+                      onChange={(event) => setAgentMessage(event.target.value)}
+                      placeholder="Ex. Analyse les risques de non-concurrence sur un contrat freelance de 12 mois..."
+                      rows={4}
+                    />
+                    <Button
+                      variant="gold"
+                      size="lg"
+                      className="w-full"
+                      onClick={handleAskAgent}
+                      disabled={isAgentLoading}
+                    >
+                      {isAgentLoading ? "Consultation en cours..." : "Consulter l'agent Dust"}
+                    </Button>
+                    {agentError && (
+                      <p className="text-sm text-red-600 text-center">{agentError}</p>
+                    )}
+                    {agentResponse && (
+                      <div className="p-4 rounded-lg border border-border/50 bg-muted/30 text-left space-y-2">
+                        <p className="text-sm font-medium text-foreground">Réponse de l'agent</p>
+                        <p className="text-sm text-foreground/80 whitespace-pre-wrap">{agentResponse}</p>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             )}

@@ -1,4 +1,4 @@
-import { Home, Shield, DollarSign, Zap, Settings, LogOut } from "lucide-react";
+import { Home, Shield, DollarSign, Zap, Settings, LogOut, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +50,14 @@ const AppSidebar = () => {
 
       {/* Bottom Section */}
       <div className="p-4 border-t border-border/50 space-y-2">
+        <Link
+          to="/"
+          className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground/70 hover:bg-muted/50 hover:text-foreground transition-all duration-300 group"
+        >
+          <ArrowLeft className="w-5 h-5 text-foreground/60 group-hover:text-gold transition-colors" />
+          <span className="text-sm">Retour au site</span>
+        </Link>
+
         <Link
           to="/app/settings"
           className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground/70 hover:bg-muted/50 hover:text-foreground transition-all duration-300 group"
