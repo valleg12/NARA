@@ -1,7 +1,7 @@
 import { DustAPI } from "@dust-tt/client";
 
 const workspaceId = "Z1YDH1d9W9";
-const agentId = "YX4V29pLKw";
+const agentId = "QCOi8N1dOp";
 const apiKey = process.env.DUST_API_KEY ?? "sk-bf49d6cbdca92c3c0498c86047ec1608";
 
 const dustAPI = new DustAPI(
