@@ -75,7 +75,7 @@ exports.handler = async (event, context) => {
     }
 
     const eventsResponse = await fetch(
-      `https://eu.dust.tt/api/v1/w/${WORKSPACE_ID}/assistant/conversations/${conversationId}/events`,
+      `https://eu.dust.tt/api/v1/w/${workspaceId}/assistant/conversations/${conversationId}/events`,
       {
         method: "GET",
         headers: {
