@@ -8,16 +8,9 @@ exports.handler = async (event, context) => {
     };
   }
 
-  const dustApiKey = process.env.DUST_API_KEY;
+  const dustApiKey = process.env.DUST_API_KEY ?? "sk-bf49d6cbdca92c3c0498c86047ec1608";
   const workspaceId = "Z1YDH1d9W9";
   const agentId = "YX4V29pLKw";
-
-  if (!dustApiKey) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: "Missing DUST_API_KEY environment variable" }),
-    };
-  }
 
   const dustUrl = `https://eu.dust.tt/api/v1/w/${workspaceId}/assistant/conversations`;
 
