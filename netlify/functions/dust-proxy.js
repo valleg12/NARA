@@ -1,4 +1,4 @@
-const { DustAPI } = require("@dust-tt/client");
+import { DustAPI } from "@dust-tt/client";
 
 const workspaceId = "Z1YDH1d9W9";
 const agentId = "YX4V29pLKw";
@@ -13,7 +13,7 @@ const dustAPI = new DustAPI(
   console
 );
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
 
   if (event.httpMethod !== "POST") {
@@ -48,9 +48,11 @@ exports.handler = async (event, context) => {
           origin: "api",
         },
       },
+      blocking: true,
     });
 
     if (conversationResult.isErr()) {
+    console.error("Dust createConversation error", conversationResult.error);
       return {
         statusCode: 502,
         body: JSON.stringify({
@@ -59,56 +61,17 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const { conversation, message: createdMessage } = conversationResult.value;
-
-    const streamResult = await dustAPI.streamAgentAnswerEvents({
-      conversation,
-      userMessageId: createdMessage.sId,
-    });
-
-    if (streamResult.isErr()) {
-      return {
-        statusCode: 502,
-        body: JSON.stringify({
-          error: streamResult.error.message,
-        }),
-      };
-    }
-
-    const { eventStream } = streamResult.value;
-    let answer = "";
-    const actions = [];
-    let lastAgentMessage = null;
-
-    for await (const event of eventStream) {
-      if (!event) continue;
-
-      if (event.type === "agent_error" || event.type === "user_message_error") {
-        throw new Error(event.error?.message ?? "Erreur Dust");
-      }
-
-      if (event.type === "agent_action_success") {
-        actions.push(event.action);
-      }
-
-      if (event.type === "generation_tokens" && event.text) {
-        answer += event.text;
-      }
-
-      if (event.type === "agent_message_success") {
-        lastAgentMessage = event.message;
-        const parsed = extractText(event.message?.content);
-        if (parsed) {
-          answer = parsed;
-        }
-      }
-    }
+    const { conversation } = conversationResult.value;
+    const agentMessages = conversation.content
+      .flat()
+      .filter((msg) => msg.type === "agent_message")
+      .map((msg) => extractText(msg?.content))
+      .filter((text) => typeof text === "string" && text.trim().length > 0);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: answer || extractText(lastAgentMessage?.content) || "",
-        actions,
+        message: agentMessages.at(-1) ?? "",
         conversationId: conversation.sId,
       }),
     };
