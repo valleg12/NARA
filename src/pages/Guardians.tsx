@@ -1,0 +1,215 @@
+import { useState } from "react";
+import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
+const contracts = [
+  {
+    id: 1,
+    name: "Contrat Prestation - Client ABC",
+    date: "15 Jan 2024",
+    status: "validated",
+    alerts: [],
+  },
+  {
+    id: 2,
+    name: "Contrat Projet X",
+    date: "20 Jan 2024",
+    status: "analyzing",
+    alerts: [],
+  },
+  {
+    id: 3,
+    name: "NDA - Partenariat Y",
+    date: "10 Jan 2024",
+    status: "action-required",
+    alerts: [
+      { type: "critical", message: "Clause de non-concurrence trop restrictive" },
+      { type: "warning", message: "Durée d'engagement non spécifiée" },
+    ],
+  },
+];
+
+const Guardians = () => {
+  const [selectedContract, setSelectedContract] = useState<number | null>(null);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "validated":
+        return "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
+      case "analyzing":
+        return "bg-gold/10 text-gold-dark border-gold/20";
+      case "action-required":
+        return "bg-orange-500/10 text-orange-700 border-orange-500/20";
+      default:
+        return "bg-foreground/10 text-foreground border-foreground/20";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "validated":
+        return "Validé";
+      case "analyzing":
+        return "En analyse";
+      case "action-required":
+        return "Action requise";
+      default:
+        return "Archivé";
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-4xl font-semibold text-foreground">
+            Vos Contrats
+          </h1>
+          <p className="text-foreground/60 mt-2">
+            Protection juridique intelligente pour votre carrière
+          </p>
+        </div>
+        <Button variant="gold" size="lg">
+          <Plus className="mr-2 h-5 w-5" />
+          Soumettre un contrat
+        </Button>
+      </div>
+
+      {contracts.length === 0 ? (
+        <Card className="border-border/50">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 rounded-full bg-gold/10 flex items-center justify-center mb-4">
+              <FileText className="w-8 h-8 text-gold" />
+            </div>
+            <h3 className="font-display text-xl font-semibold text-foreground mb-2">
+              Votre espace juridique est prêt
+            </h3>
+            <p className="text-foreground/60 text-center max-w-md mb-6">
+              Soumettez votre premier contrat pour une analyse approfondie par notre IA juridique.
+            </p>
+            <Button variant="gold" size="lg">
+              <Upload className="mr-2 h-5 w-5" />
+              Soumettre un contrat
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Contract List */}
+          <div className="lg:col-span-1 space-y-4">
+            {contracts.map((contract) => (
+              <Card
+                key={contract.id}
+                className={`border-border/50 cursor-pointer transition-all duration-300 hover-lift ${
+                  selectedContract === contract.id ? "ring-2 ring-gold" : ""
+                }`}
+                onClick={() => setSelectedContract(contract.id)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base font-semibold text-foreground leading-snug">
+                      {contract.name}
+                    </CardTitle>
+                    <Badge className={getStatusColor(contract.status)}>
+                      {getStatusText(contract.status)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-2 text-xs text-foreground/60">
+                    <FileText className="w-3 h-3" />
+                    {contract.date}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Contract Detail */}
+          <div className="lg:col-span-2">
+            {selectedContract ? (
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-display font-semibold">
+                    {contracts.find((c) => c.id === selectedContract)?.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Analysis Report */}
+                  <div className="space-y-4">
+                    <h3 className="font-display text-lg font-semibold text-foreground">
+                      Rapport d'analyse
+                    </h3>
+
+                    {contracts.find((c) => c.id === selectedContract)?.alerts.map((alert, index) => (
+                      <div
+                        key={index}
+                        className={`flex items-start gap-4 p-4 rounded-lg border ${
+                          alert.type === "critical"
+                            ? "bg-red-500/5 border-red-500/20"
+                            : alert.type === "warning"
+                            ? "bg-orange-500/5 border-orange-500/20"
+                            : "bg-blue-500/5 border-blue-500/20"
+                        }`}
+                      >
+                        {alert.type === "critical" ? (
+                          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        ) : alert.type === "warning" ? (
+                          <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">
+                            {alert.type === "critical"
+                              ? "Point critique"
+                              : alert.type === "warning"
+                              ? "Point d'attention"
+                              : "Point informatif"}
+                          </p>
+                          <p className="text-sm text-foreground/70 mt-1">{alert.message}</p>
+                        </div>
+                      </div>
+                    ))}
+
+                    {(!contracts.find((c) => c.id === selectedContract)?.alerts.length ||
+                      contracts.find((c) => c.id === selectedContract)?.alerts.length === 0) && (
+                      <div className="flex items-start gap-4 p-4 rounded-lg border bg-emerald-500/5 border-emerald-500/20">
+                        <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">Contrat validé</p>
+                          <p className="text-sm text-foreground/70 mt-1">
+                            Ce contrat a été analysé et ne présente pas de clauses problématiques.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {contracts.find((c) => c.id === selectedContract)?.status === "action-required" && (
+                    <Button variant="gold" size="lg" className="w-full">
+                      Contacter mon agent NARA
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-border/50">
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <FileText className="w-12 h-12 text-foreground/30 mb-4" />
+                  <p className="text-foreground/60">
+                    Sélectionnez un contrat pour voir les détails
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Guardians;
