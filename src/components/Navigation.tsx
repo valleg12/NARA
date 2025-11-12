@@ -14,7 +14,6 @@ const Navigation = () => {
     { name: "Plateforme", path: "/platform" },
     { name: "Contact", path: "/contact" },
   ];
-  const appEntryPoint = "http://localhost:8080/app";
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -45,7 +44,7 @@ const Navigation = () => {
               </Link>
             ))}
             <Button size="sm" className="bg-gold text-background hover:bg-gold/90" asChild>
-              <a href={appEntryPoint}>Accéder à l&apos;app</a>
+              <Link to="/app">Accéder à l&apos;app</Link>
             </Button>
           </div>
 
@@ -79,12 +78,8 @@ const Navigation = () => {
                 {link.name}
               </Link>
             ))}
-            <Button
-              className="w-full bg-gold text-background hover:bg-gold/90"
-              onClick={() => setIsOpen(false)}
-              asChild
-            >
-              <a href={appEntryPoint}>Accéder à l&apos;app</a>
+            <Button className="w-full bg-gold text-background hover:bg-gold/90" onClick={() => setIsOpen(false)} asChild>
+              <Link to="/app">Accéder à l&apos;app</Link>
             </Button>
           </div>
         </div>
