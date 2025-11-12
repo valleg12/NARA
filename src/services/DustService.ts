@@ -37,7 +37,7 @@ class DustService {
     }
 
     if (!response.ok) {
-      throw new Error(data.error ?? "Erreur Dust API");
+      throw new Error(normalizeError(data, "Erreur Dust API"));
     }
 
     if (typeof data.message === "string" && data.message.trim().length > 0) {
@@ -64,7 +64,7 @@ class DustService {
     const data = (await response.json()) as { fileId?: string; error?: string };
 
     if (!response.ok || !data.fileId) {
-      throw new Error(data.error ?? "Erreur lors du téléversement du document");
+      throw new Error(normalizeError(data, "Erreur lors du téléversement du document"));
     }
 
     return data.fileId;
@@ -82,6 +82,36 @@ class DustService {
 
     return btoa(binary);
   }
+}
+
+function normalizeError(
+  data: unknown,
+  fallback: string
+): string {
+  if (!data) {
+    return fallback;
+  }
+
+  if (typeof data === "string") {
+    return data;
+  }
+
+  if (typeof data === "object") {
+    const maybeError = (data as { error?: unknown }).error;
+    if (typeof maybeError === "string") {
+      return maybeError;
+    }
+    if (typeof maybeError === "object" && maybeError) {
+      const message = (maybeError as { message?: unknown }).message;
+      if (typeof message === "string") {
+        return message;
+      }
+      return JSON.stringify(maybeError);
+    }
+    return JSON.stringify(data);
+  }
+
+  return fallback;
 }
 
 export default new DustService();
