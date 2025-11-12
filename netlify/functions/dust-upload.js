@@ -27,7 +27,7 @@ exports.handler = async (event, context) => {
     const formData = new FormData();
     formData.append("file", blob, fileName);
 
-    const response = await fetch(`https://eu.dust.tt/api/v1/w/${WORKSPACE_ID}/files/upload`, {
+    const response = await fetch(`https://eu.dust.tt/api/v1/w/${WORKSPACE_ID}/files`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${DUST_API_KEY}`,

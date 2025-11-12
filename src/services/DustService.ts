@@ -7,6 +7,7 @@ type DustAgentPayload = {
 };
 
 type DustAgentResponse = {
+  message?: string;
   conversation?: {
     content?: Array<Array<{ content?: string }>>;
   };
@@ -29,15 +30,19 @@ class DustService {
       body: JSON.stringify(payload),
     });
 
-    const data = (await response.json()) as DustAgentResponse;
+    let data: DustAgentResponse;
+    try {
+      data = (await response.json()) as DustAgentResponse;
+    } catch {
+      throw new Error("Réponse invalide de l'agent Dust");
+    }
 
     if (!response.ok) {
       throw new Error(data.error ?? "Erreur Dust API");
     }
 
-    const content = data.conversation?.content?.[1]?.[0]?.content;
-    if (content) {
-      return content;
+    if (typeof data.message === "string" && data.message.trim().length > 0) {
+      return data.message;
     }
 
     return JSON.stringify(data);
