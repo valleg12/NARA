@@ -25,7 +25,7 @@ export const handler = async (event, context) => {
 
   try {
     const payload = JSON.parse(event.body ?? "{}");
-    const { message, username, email, fullName } = payload;
+    const { message, username, email, fullName, fileIds } = payload;
 
     if (typeof message !== "string" || message.trim().length === 0) {
       return {
@@ -33,6 +33,11 @@ export const handler = async (event, context) => {
         body: JSON.stringify({ error: "Le champ message est requis." }),
       };
     }
+
+    const contentFragments =
+      Array.isArray(fileIds) && fileIds.length > 0
+        ? fileIds.map((fileId) => ({ fileId }))
+        : undefined;
 
     const conversationResult = await dustAPI.createConversation({
       title: null,
@@ -48,6 +53,7 @@ export const handler = async (event, context) => {
           origin: "api",
         },
       },
+      ...(contentFragments ? { contentFragments } : {}),
       blocking: true,
     });
 
