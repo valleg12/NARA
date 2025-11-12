@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus } from "lucide-react";
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,47 @@ const Guardians = () => {
   const [agentResponse, setAgentResponse] = useState<string | null>(null);
   const [agentError, setAgentError] = useState<string | null>(null);
   const [isAgentLoading, setIsAgentLoading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFileSelection = (file?: File) => {
+    if (!file) {
+      return;
+    }
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setUploadError("Seuls les fichiers PDF sont autorisés.");
+      setUploadedFile(null);
+      return;
+    }
+    setUploadError(null);
+    setUploadedFile(file);
+  };
+
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    handleFileSelection(file);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer.files?.[0];
+    handleFileSelection(file);
+  };
+
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleAskAgent = async () => {
     if (!agentMessage.trim()) {
@@ -51,8 +92,12 @@ const Guardians = () => {
     setAgentResponse(null);
 
     try {
+      const messageToSend = uploadedFile
+        ? `${agentMessage}\n\n[Pièce jointe: ${uploadedFile.name}]`
+        : agentMessage;
+
       const response = await DustService.callAgent({
-        message: agentMessage,
+        message: messageToSend,
         username: "Manager",
         fullName: "Utilisateur NARA",
       });
@@ -250,6 +295,65 @@ const Guardians = () => {
                       placeholder="Ex. Analyse les risques de non-concurrence sur un contrat freelance de 12 mois..."
                       rows={4}
                     />
+                    <div
+                      className="rounded-lg border-2 border-dashed border-border/60 bg-muted/20 p-6 text-center transition-colors hover:border-gold focus-within:border-gold"
+                      onDrop={handleDrop}
+                      onDragOver={handleDragOver}
+                    >
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center">
+                          <Upload className="w-5 h-5 text-gold" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-foreground">
+                            Glissez-déposez un contrat au format PDF
+                          </p>
+                          <p className="text-xs text-foreground/60">
+                            Taille maximale recommandée : 10 Mo
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          Parcourir votre ordinateur
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={handleInputChange}
+                        />
+                        <p className="text-xs text-foreground/50">
+                          Seuls les fichiers PDF sont pris en charge actuellement.
+                        </p>
+                      </div>
+                    </div>
+                    {uploadError && <p className="text-sm text-red-600 text-center">{uploadError}</p>}
+                    {uploadedFile && (
+                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-4">
+                        <div className="mt-1">
+                          <FileText className="w-5 h-5 text-gold" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">{uploadedFile.name}</p>
+                          <p className="text-xs text-foreground/60">
+                            {(uploadedFile.size / 1024).toFixed(1)} Ko
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveFile}
+                          className="text-foreground/60 hover:text-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
                     <Button
                       variant="gold"
                       size="lg"
