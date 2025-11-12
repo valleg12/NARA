@@ -39,6 +39,7 @@ const Guardians = () => {
   const [agentResponse, setAgentResponse] = useState<string | null>(null);
   const [agentError, setAgentError] = useState<string | null>(null);
   const [isAgentLoading, setIsAgentLoading] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -92,14 +93,23 @@ const Guardians = () => {
     setAgentResponse(null);
 
     try {
-      const messageToSend = uploadedFile
-        ? `${agentMessage}\n\n[Pièce jointe: ${uploadedFile.name}]`
-        : agentMessage;
+      let fileIds: string[] | undefined;
+
+      if (uploadedFile) {
+        setIsUploadingFile(true);
+        try {
+          const fileId = await DustService.uploadFile(uploadedFile);
+          fileIds = [fileId];
+        } finally {
+          setIsUploadingFile(false);
+        }
+      }
 
       const response = await DustService.callAgent({
-        message: messageToSend,
+        message: agentMessage,
         username: "Manager",
         fullName: "Utilisateur NARA",
+        fileIds,
       });
       setAgentResponse(response);
     } catch (error) {
@@ -359,9 +369,13 @@ const Guardians = () => {
                       size="lg"
                       className="w-full"
                       onClick={handleAskAgent}
-                      disabled={isAgentLoading}
+                      disabled={isAgentLoading || isUploadingFile}
                     >
-                      {isAgentLoading ? "Consultation en cours..." : "Consulter l'agent Dust"}
+                      {isUploadingFile
+                        ? "Téléversement du document..."
+                        : isAgentLoading
+                        ? "Consultation en cours..."
+                        : "Consulter l'agent Dust"}
                     </Button>
                     {agentError && (
                       <p className="text-sm text-red-600 text-center">{agentError}</p>

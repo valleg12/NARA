@@ -16,16 +16,19 @@ exports.handler = async (event, context) => {
 
   try {
     const payload = JSON.parse(event.body ?? "{}");
+    const { message, username, email, fullName, fileIds } = payload;
+
     const dustPayload = {
       message: {
-        content: payload.message,
+        content: message,
         mentions: [{ configurationId: agentId }],
         context: {
           timezone: "Europe/Paris",
-          username: payload.username ?? "Utilisateur",
-          email: payload.email ?? null,
-          fullName: payload.fullName ?? null,
+          username: username ?? "Utilisateur",
+          email: email ?? null,
+          fullName: fullName ?? null,
         },
+        ...(Array.isArray(fileIds) && fileIds.length > 0 ? { file_ids: fileIds } : {}),
       },
       blocking: true,
     };
