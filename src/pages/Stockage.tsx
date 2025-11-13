@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import { FileText, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { FileText, Loader2, AlertCircle, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import SupabaseService, { type ContractSummary } from "@/services/SupabaseService";
 
 const Stockage = () => {
   const [contracts, setContracts] = useState<ContractSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [openContracts, setOpenContracts] = useState<Set<string>>(new Set());
 
   const fetchContracts = async () => {
     setIsLoading(true);
@@ -53,6 +55,18 @@ const Stockage = () => {
       return `Contrat ${contract.contract_id}`;
     }
     return `Contrat ${contract.id.substring(0, 8)}...`;
+  };
+
+  const toggleContract = (contractId: string) => {
+    setOpenContracts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(contractId)) {
+        newSet.delete(contractId);
+      } else {
+        newSet.add(contractId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -108,45 +122,65 @@ const Stockage = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6">
-          {contracts.map((contract) => (
-            <Card key={contract.id} className="border-border/50 hover-lift transition-all duration-300">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="w-5 h-5 text-gold" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg font-semibold text-foreground mb-1">
-                        {getFileName(contract)}
-                      </CardTitle>
-                      {contract.created_at && (
-                        <p className="text-xs text-foreground/60">
-                          {formatDate(contract.created_at)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="flex-shrink-0">
-                    {contract.id.substring(0, 8)}...
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="text-sm font-semibold text-foreground mb-2">Résumé</h4>
-                    <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
-                      <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
-                        {contract.resume || "Aucun résumé disponible"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid gap-4">
+          {contracts.map((contract) => {
+            const isOpen = openContracts.has(contract.id);
+            return (
+              <Collapsible
+                key={contract.id}
+                open={isOpen}
+                onOpenChange={() => toggleContract(contract.id)}
+              >
+                <Card className="border-border/50 hover-lift transition-all duration-300">
+                  <CollapsibleTrigger asChild>
+                    <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center flex-shrink-0">
+                            <FileText className="w-5 h-5 text-gold" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg font-semibold text-foreground mb-1">
+                              {getFileName(contract)}
+                            </CardTitle>
+                            {contract.created_at && (
+                              <p className="text-xs text-foreground/60">
+                                {formatDate(contract.created_at)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="flex-shrink-0">
+                            {contract.id.substring(0, 8)}...
+                          </Badge>
+                          {isOpen ? (
+                            <ChevronUp className="w-5 h-5 text-foreground/60" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-foreground/60" />
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent className="pt-0">
+                      <div className="space-y-3">
+                        <div>
+                          <h4 className="text-sm font-semibold text-foreground mb-2">Résumé</h4>
+                          <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                            <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                              {contract.resume || "Aucun résumé disponible"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            );
+          })}
         </div>
       )}
     </div>
