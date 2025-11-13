@@ -1,11 +1,10 @@
-import { Buffer } from "node:buffer";
-import FormData from "form-data";
-import fetch from "node-fetch";
+const { Buffer } = require("node:buffer");
+const fetch = require("node-fetch");
 
 const workspaceId = "Z1YDH1d9W9";
 const apiKey = process.env.DUST_API_KEY ?? "sk-bf49d6cbdca92c3c0498c86047ec1608";
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
 
   if (event.httpMethod !== "POST") {

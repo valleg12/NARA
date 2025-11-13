@@ -1,4 +1,4 @@
-import { DustAPI } from "@dust-tt/client";
+const { DustAPI } = require("@dust-tt/client");
 
 const workspaceId = "Z1YDH1d9W9";
 const agentId = "QCOi8N1dOp";
@@ -13,7 +13,7 @@ const dustAPI = new DustAPI(
   console
 );
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
 
   if (event.httpMethod !== "POST") {
