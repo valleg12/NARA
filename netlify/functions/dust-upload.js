@@ -63,11 +63,21 @@ export const handler = async (event, context) => {
       };
     }
 
-    const fileId = data.file?.id ?? data.file?.sId ?? data.id;
-    console.log("✅ FileId extrait:", fileId);
+    // Extraire fileId et s'assurer que c'est une string
+    let fileId = data.file?.id ?? data.file?.sId ?? data.id;
+    
+    // Si fileId est un objet, extraire la propriété id ou sId
+    if (fileId && typeof fileId === "object") {
+      fileId = fileId.id ?? fileId.sId ?? null;
+    }
+    
+    // Forcer en string et nettoyer
+    fileId = fileId ? String(fileId).trim() : null;
+    
+    console.log("✅ FileId extrait (type:", typeof fileId, "):", fileId);
 
-    if (!fileId) {
-      console.error("❌ Aucun fileId trouvé dans la réponse:", data);
+    if (!fileId || fileId.length === 0) {
+      console.error("❌ Aucun fileId valide trouvé dans la réponse:", data);
       return {
         statusCode: 500,
         body: JSON.stringify({ error: "Aucun fileId retourné par Dust" }),
@@ -77,7 +87,7 @@ export const handler = async (event, context) => {
     return {
       statusCode: 200,
       body: JSON.stringify({
-        fileId,
+        fileId: fileId, // Garanti d'être une string
       }),
     };
   } catch (error) {

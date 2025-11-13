@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import DustService from "@/services/DustService";
-import { extractTextFromPDF } from "@/utils/pdfExtractor";
 
 type ChatMessage = {
   id: string;
@@ -102,20 +101,17 @@ const Guardians = () => {
       return;
     }
 
-    const fileToProcess = currentFile;
-    const baseMessage = currentMessage.trim() || "Analyse ce document";
-    
-    // Préparer le message utilisateur (sans le texte extrait du PDF pour l'instant)
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: baseMessage,
-      file: fileToProcess || undefined,
+      content: currentMessage.trim() || "Analyse ce document",
+      file: currentFile || undefined,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setCurrentMessage("");
+    const fileToSend = currentFile;
     setCurrentFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -124,33 +120,26 @@ const Guardians = () => {
     setIsAgentLoading(true);
 
     try {
-      let finalMessage = baseMessage;
+      let fileIds: string[] | undefined;
 
-      // Si un fichier PDF est présent, extraire le texte
-      if (fileToProcess) {
+      if (fileToSend) {
         setIsUploadingFile(true);
         try {
-          const extractedText = await extractTextFromPDF(fileToProcess);
-          
-          // Combiner le message utilisateur avec le texte extrait
-          if (extractedText.trim()) {
-            finalMessage = `${baseMessage}\n\n--- Contenu du document PDF ---\n\n${extractedText}`;
-          } else {
-            finalMessage = `${baseMessage}\n\n⚠️ Aucun texte n'a pu être extrait du PDF. Le document est peut-être scanné ou protégé.`;
-          }
-        } catch (extractError) {
-          const errorMsg = extractError instanceof Error ? extractError.message : "Erreur lors de l'extraction";
-          finalMessage = `${baseMessage}\n\n⚠️ Erreur lors de l'extraction du PDF: ${errorMsg}`;
+          const fileId = await DustService.uploadFile(fileToSend);
+          fileIds = [fileId];
         } finally {
           setIsUploadingFile(false);
         }
       }
 
-      // Envoyer le message à Dust (sans fileIds, juste le texte)
+      // S'assurer que fileIds est un tableau de strings
+      const cleanFileIds = fileIds ? fileIds.map(id => String(id).trim()).filter(id => id.length > 0) : undefined;
+      
       const response = await DustService.callAgent({
-        message: finalMessage,
+        message: userMessage.content,
         username: "Manager",
         fullName: "Utilisateur NARA",
+        fileIds: cleanFileIds,
         conversationId: conversationId || undefined,
       });
 
@@ -417,45 +406,13 @@ const Guardians = () => {
                         {error}
                       </div>
                     )}
-                    
-                    {/* Zone de drag & drop pour PDF */}
-                    {!currentFile && (
-                      <div
-                        className="rounded-lg border-2 border-dashed border-border/60 bg-muted/20 p-4 text-center transition-colors hover:border-gold cursor-pointer"
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
-                            <Upload className="w-5 h-5 text-gold" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">
-                              Glissez un PDF ici ou cliquez pour sélectionner
-                            </p>
-                            <p className="text-xs text-foreground/60 mt-1">
-                              Le texte sera extrait automatiquement et analysé par l'agent
-                            </p>
-                          </div>
-                        </div>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="application/pdf"
-                          className="hidden"
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                    )}
-
                     {currentFile && (
-                      <div className="flex items-start gap-3 rounded-lg border border-gold/30 bg-gold/5 p-3">
+                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-3">
                         <FileText className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{currentFile.name}</p>
                           <p className="text-xs text-foreground/60">
-                            {(currentFile.size / 1024).toFixed(1)} Ko - Prêt à être analysé
+                            {(currentFile.size / 1024).toFixed(1)} Ko
                           </p>
                         </div>
                         <Button
@@ -469,7 +426,6 @@ const Guardians = () => {
                         </Button>
                       </div>
                     )}
-                    
                     <div className="flex gap-2">
                       <div className="flex-1 relative">
                         <Textarea
@@ -481,9 +437,26 @@ const Guardians = () => {
                               handleSendMessage();
                             }
                           }}
-                          placeholder={currentFile ? "Ajoutez un message (optionnel) ou envoyez directement..." : "Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"}
+                          placeholder="Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"
                           rows={2}
-                          className="resize-none"
+                          className="resize-none pr-12"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute right-2 bottom-2"
+                          title="Joindre un fichier PDF"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={handleInputChange}
                         />
                       </div>
                       <Button
@@ -494,7 +467,7 @@ const Guardians = () => {
                         className="px-6"
                       >
                         {isUploadingFile ? (
-                          "Extraction..."
+                          "Upload..."
                         ) : isAgentLoading ? (
                           "..."
                         ) : (

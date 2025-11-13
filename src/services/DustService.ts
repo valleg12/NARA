@@ -64,7 +64,13 @@ class DustService {
       throw new Error(normalizeError(data, "Erreur lors du téléversement du document"));
     }
 
-    return data.fileId;
+    // S'assurer que fileId est bien une string
+    const fileId = String(data.fileId).trim();
+    if (!fileId || fileId.length === 0) {
+      throw new Error("fileId invalide retourné par le serveur");
+    }
+
+    return fileId;
   }
 
   private arrayBufferToBase64(buffer: ArrayBuffer): string {
