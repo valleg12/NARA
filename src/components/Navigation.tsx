@@ -25,7 +25,7 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <img src="/logo.svg" alt="NARA" className="h-8 w-auto" />
+            <img src={logo} alt="NARA" className="h-8 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}

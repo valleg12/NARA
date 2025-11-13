@@ -1,9 +1,10 @@
-import { Home, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { Settings, LogOut, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.svg";
 
 const navigation = [
-  { name: "Accueil", href: "/app", icon: Home },
+  { name: "Accueil", href: "/app" },
   { name: "GUARDIANS", href: "/app/guardians" },
   { name: "CASHFLOW", href: "/app/cashflow" },
   { name: "COMPLIANCE", href: "/app/compliance" },
@@ -17,7 +18,7 @@ const AppSidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-border/50">
         <Link to="/app" className="flex items-center">
-          <img src="/logo.svg" alt="NARA" className="h-8 w-auto" />
+          <img src={logo} alt="NARA" className="h-8 w-auto" />
         </Link>
       </div>
 
@@ -36,14 +37,6 @@ const AppSidebar = () => {
                   : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              {item.icon && (
-                <item.icon
-                  className={cn(
-                    "w-5 h-5 transition-colors",
-                    isActive ? "text-gold" : "text-foreground/60 group-hover:text-gold"
-                  )}
-                />
-              )}
               <span className="text-sm">{item.name}</span>
             </Link>
           );
