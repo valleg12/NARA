@@ -13,6 +13,7 @@ const Navigation = () => {
     { name: "Notre Vision", path: "/about" },
     { name: "Plateforme", path: "/platform" },
     { name: "Contact", path: "/contact" },
+    { name: "Vitrine", path: "https://largest-stick-122606.framer.app/", external: true },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -28,21 +29,39 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-gold relative py-2",
-                  isActive(link.path) ? "text-foreground" : "text-foreground/70"
-                )}
-              >
-                {link.name}
-                {isActive(link.path) && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold rounded-full" />
-                )}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              if (link.external) {
+                return (
+                  <a
+                    key={link.path}
+                    href={link.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      "text-sm font-medium transition-colors hover:text-gold relative py-2",
+                      "text-foreground/70"
+                    )}
+                  >
+                    {link.name}
+                  </a>
+                );
+              }
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-gold relative py-2",
+                    isActive(link.path) ? "text-foreground" : "text-foreground/70"
+                  )}
+                >
+                  {link.name}
+                  {isActive(link.path) && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
             <Button size="sm" className="bg-gold text-background hover:bg-gold/90" asChild>
               <Link to="/app">Accéder à l&apos;app</Link>
             </Button>
@@ -59,25 +78,44 @@ const Navigation = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
-      {isOpen && (
-        <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-md animate-fade-in">
-          <div className="container mx-auto px-6 py-6 space-y-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "block py-3 px-4 rounded-md text-base font-medium transition-colors",
-                  isActive(link.path)
-                    ? "bg-accent/10 text-foreground"
-                    : "text-foreground/70 hover:bg-accent/5 hover:text-foreground"
-                )}
-              >
-                {link.name}
-              </Link>
-            ))}
+          {/* Mobile Navigation */}
+          {isOpen && (
+            <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-md animate-fade-in">
+              <div className="container mx-auto px-6 py-6 space-y-4">
+                {navLinks.map((link) => {
+                  if (link.external) {
+                    return (
+                      <a
+                        key={link.path}
+                        href={link.path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "block py-3 px-4 rounded-md text-base font-medium transition-colors",
+                          "text-foreground/70 hover:bg-accent/5 hover:text-foreground"
+                        )}
+                      >
+                        {link.name}
+                      </a>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "block py-3 px-4 rounded-md text-base font-medium transition-colors",
+                        isActive(link.path)
+                          ? "bg-accent/10 text-foreground"
+                          : "text-foreground/70 hover:bg-accent/5 hover:text-foreground"
+                      )}
+                    >
+                      {link.name}
+                    </Link>
+                  );
+                })}
             <Button className="w-full bg-gold text-background hover:bg-gold/90" onClick={() => setIsOpen(false)} asChild>
               <Link to="/app">Accéder à l&apos;app</Link>
             </Button>
