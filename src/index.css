@@ -64,32 +64,32 @@ All colors MUST be HSL.
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 46 25% 96%;
-    --sidebar-foreground: 240 56% 9%;
-    --sidebar-primary: 240 56% 9%;
-    --sidebar-primary-foreground: 46 25% 96%;
-    --sidebar-accent: 44 48% 80%;
-    --sidebar-accent-foreground: 240 56% 9%;
-    --sidebar-border: 44 30% 88%;
-    --sidebar-ring: 44 48% 80%;
+    --sidebar-background: 40 23% 95%; /* Craie */
+    --sidebar-foreground: 210 38% 16%; /* Bleu Crépuscule */
+    --sidebar-primary: 210 38% 16%; /* Bleu Crépuscule */
+    --sidebar-primary-foreground: 40 23% 95%; /* Craie */
+    --sidebar-accent: 34 35% 78%; /* Sable Doré */
+    --sidebar-accent-foreground: 210 38% 16%; /* Bleu Crépuscule */
+    --sidebar-border: 27 25% 75%; /* Terre de Sienne Douce (légèrement plus clair) */
+    --sidebar-ring: 34 35% 78%; /* Sable Doré */
   }
 
   .dark {
     /* Mode sombre avec nouvelles couleurs */
     --background: 210 38% 16%; /* Bleu Crépuscule */
-    --foreground: 40 20% 95%; /* Craie */
+    --foreground: 40 23% 95%; /* Craie */
 
     --card: 210 38% 20%;
-    --card-foreground: 40 20% 95%;
+    --card-foreground: 40 23% 95%;
 
     --popover: 210 38% 20%;
-    --popover-foreground: 40 20% 95%;
+    --popover-foreground: 40 23% 95%;
 
-    --primary: 40 20% 95%; /* Craie */
+    --primary: 40 23% 95%; /* Craie */
     --primary-foreground: 210 38% 16%; /* Bleu Crépuscule */
 
     --secondary: 210 30% 25%;
-    --secondary-foreground: 40 20% 95%;
+    --secondary-foreground: 40 23% 95%;
 
     --muted: 210 30% 25%;
     --muted-foreground: 33 20% 70%;
