@@ -40,6 +40,8 @@ export const handler = async (event, context) => {
       contentType: fileType,
     });
 
+    console.log("📤 Upload vers Dust:", { fileName, fileType, size: fileBuffer.length });
+
     const response = await fetch(`https://eu.dust.tt/api/v1/w/${workspaceId}/files`, {
       method: "POST",
       headers: {
@@ -51,6 +53,7 @@ export const handler = async (event, context) => {
     });
 
     const data = await response.json();
+    console.log("📥 Réponse Dust upload:", JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       console.error("Erreur upload Dust:", data);
@@ -60,10 +63,21 @@ export const handler = async (event, context) => {
       };
     }
 
+    const fileId = data.file?.id ?? data.file?.sId ?? data.id;
+    console.log("✅ FileId extrait:", fileId);
+
+    if (!fileId) {
+      console.error("❌ Aucun fileId trouvé dans la réponse:", data);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Aucun fileId retourné par Dust" }),
+      };
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({
-        fileId: data.file?.id ?? data.file?.sId ?? data.id,
+        fileId,
       }),
     };
   } catch (error) {

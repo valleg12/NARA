@@ -42,6 +42,7 @@ export const handler = async (event, context) => {
         .filter((id) => typeof id === "string" && id.trim().length > 0)
         .map((fileId) => ({ fileId: fileId.trim() }));
       console.log("📎 FileIds reçus:", fileIds);
+      console.log("✅ FileIds filtrés:", contentFragments.map(f => f.fileId));
       console.log("📦 contentFragments créé:", JSON.stringify(contentFragments, null, 2));
     }
 
@@ -59,9 +60,9 @@ export const handler = async (event, context) => {
             origin: "api",
           },
         },
-        contentFragments: contentFragments,
+        ...(contentFragments.length > 0 && { contentFragments }), // Format recommandé par Dust
         visibility: "unlisted",
-        blocking: true,
+        blocking: true, // true = réponse synchrone (plus simple pour MVP), false = asynchrone (nécessite polling/webhook)
       };
 
       console.log("📤 Payload envoyé à Dust API REST:", JSON.stringify(payload, null, 2));
