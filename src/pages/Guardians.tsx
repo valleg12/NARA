@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import DustService from "@/services/DustService";
+import { extractTextFromPDF } from "@/utils/pdfExtractor";
 
 type ChatMessage = {
   id: string;
@@ -101,17 +102,20 @@ const Guardians = () => {
       return;
     }
 
+    const fileToProcess = currentFile;
+    const baseMessage = currentMessage.trim() || "Analyse ce document";
+    
+    // Préparer le message utilisateur (sans le texte extrait du PDF pour l'instant)
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: currentMessage.trim() || "Analyse ce document",
-      file: currentFile || undefined,
+      content: baseMessage,
+      file: fileToProcess || undefined,
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setCurrentMessage("");
-    const fileToSend = currentFile;
     setCurrentFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -120,23 +124,33 @@ const Guardians = () => {
     setIsAgentLoading(true);
 
     try {
-      let fileIds: string[] | undefined;
+      let finalMessage = baseMessage;
 
-      if (fileToSend) {
+      // Si un fichier PDF est présent, extraire le texte
+      if (fileToProcess) {
         setIsUploadingFile(true);
         try {
-          const fileId = await DustService.uploadFile(fileToSend);
-          fileIds = [fileId];
+          const extractedText = await extractTextFromPDF(fileToProcess);
+          
+          // Combiner le message utilisateur avec le texte extrait
+          if (extractedText.trim()) {
+            finalMessage = `${baseMessage}\n\n--- Contenu du document PDF ---\n\n${extractedText}`;
+          } else {
+            finalMessage = `${baseMessage}\n\n⚠️ Aucun texte n'a pu être extrait du PDF. Le document est peut-être scanné ou protégé.`;
+          }
+        } catch (extractError) {
+          const errorMsg = extractError instanceof Error ? extractError.message : "Erreur lors de l'extraction";
+          finalMessage = `${baseMessage}\n\n⚠️ Erreur lors de l'extraction du PDF: ${errorMsg}`;
         } finally {
           setIsUploadingFile(false);
         }
       }
 
+      // Envoyer le message à Dust (sans fileIds, juste le texte)
       const response = await DustService.callAgent({
-        message: userMessage.content,
+        message: finalMessage,
         username: "Manager",
         fullName: "Utilisateur NARA",
-        fileIds,
         conversationId: conversationId || undefined,
       });
 
