@@ -16,10 +16,12 @@ type DustAgentResponse = {
 
 class DustService {
   private proxyUrl: string;
+  private cashflowProxyUrl: string;
   private uploadProxyUrl: string;
 
   constructor() {
     this.proxyUrl = import.meta.env.VITE_DUST_PROXY_URL ?? "/.netlify/functions/dust-proxy";
+    this.cashflowProxyUrl = import.meta.env.VITE_DUST_CASHFLOW_PROXY_URL ?? "/.netlify/functions/dust-proxy-cashflow";
     this.uploadProxyUrl = import.meta.env.VITE_DUST_UPLOAD_URL ?? "/.netlify/functions/dust-upload";
   }
 
@@ -39,6 +41,27 @@ class DustService {
 
     if (!response.ok) {
       throw new Error(normalizeError(data, "Erreur Dust API"));
+    }
+
+    return data;
+  }
+
+  async callCashflowAgent(payload: DustAgentPayload): Promise<DustAgentResponse> {
+    const response = await fetch(this.cashflowProxyUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    let data: DustAgentResponse;
+    try {
+      data = (await response.json()) as DustAgentResponse;
+    } catch {
+      throw new Error("Réponse invalide de l'agent Dust Cashflow");
+    }
+
+    if (!response.ok) {
+      throw new Error(normalizeError(data, "Erreur Dust API Cashflow"));
     }
 
     return data;
