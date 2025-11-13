@@ -27,7 +27,7 @@ const invoices = [
   },
 ];
 
-const Cashy = () => {
+const Cashflow = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "paid":
@@ -188,4 +188,4 @@ const Cashy = () => {
   );
 };
 
-export default Cashy;
+export default Cashflow;

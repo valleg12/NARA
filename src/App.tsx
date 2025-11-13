@@ -11,8 +11,8 @@ import NotFound from "./pages/NotFound";
 import AppLayout from "./pages/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Guardians from "./pages/Guardians";
-import Cashy from "./pages/Cashy";
-import Productivity from "./pages/Productivity";
+import Cashflow from "./pages/Cashflow";
+import Compliance from "./pages/Compliance";
 
 const queryClient = new QueryClient();
 
@@ -30,8 +30,8 @@ const App = () => (
           <Route path="/app" element={<AppLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="guardians" element={<Guardians />} />
-            <Route path="cashy" element={<Cashy />} />
-            <Route path="productivity" element={<Productivity />} />
+            <Route path="cashflow" element={<Cashflow />} />
+            <Route path="compliance" element={<Compliance />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

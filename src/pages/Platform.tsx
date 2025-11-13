@@ -30,7 +30,7 @@ const modules = [
   },
   {
     icon: DollarSign,
-    name: "CASHY",
+    name: "CASHFLOW",
     tagline: "Comptabilité et finances connectées",
     description: "Concentrez-vous sur votre art, nous gérons vos finances avec précision et transparence.",
     features: [
@@ -53,7 +53,7 @@ const modules = [
   },
   {
     icon: Zap,
-    name: "PRODUCTIVITY",
+    name: "COMPLIANCE",
     tagline: "Organisation et collaboration centralisées",
     description: "Tous vos projets, collaborations et deadlines au même endroit. Simplifiez votre quotidien.",
     features: [

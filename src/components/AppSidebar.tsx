@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { name: "Accueil", href: "/app", icon: Home },
   { name: "GUARDIANS", href: "/app/guardians", icon: Shield },
-  { name: "CASHY", href: "/app/cashy", icon: DollarSign },
-  { name: "PRODUCTIVITY", href: "/app/productivity", icon: Zap },
+  { name: "CASHFLOW", href: "/app/cashflow", icon: DollarSign },
+  { name: "COMPLIANCE", href: "/app/compliance", icon: Zap },
 ];
 
 const AppSidebar = () => {

@@ -91,7 +91,7 @@ const Dashboard = () => {
             className="w-full justify-start h-auto py-6"
             asChild
           >
-            <Link to="/app/cashy">
+            <Link to="/app/cashflow">
               <Plus className="mr-2 h-5 w-5" />
               <div className="text-left">
                 <div className="font-semibold">Créer une facture</div>
@@ -106,7 +106,7 @@ const Dashboard = () => {
             className="w-full justify-start h-auto py-6"
             asChild
           >
-            <Link to="/app/productivity">
+            <Link to="/app/compliance">
               <Plus className="mr-2 h-5 w-5" />
               <div className="text-left">
                 <div className="font-semibold">Ajouter une tâche</div>

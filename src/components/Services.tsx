@@ -16,7 +16,7 @@ const services = [
   },
   {
     icon: DollarSign,
-    title: "CASHY",
+    title: "CASHFLOW",
     subtitle: "Comptabilité et finances connectées",
     description: "Concentrez-vous sur votre art, nous gérons vos finances.",
     features: [
@@ -27,7 +27,7 @@ const services = [
   },
   {
     icon: Zap,
-    title: "PRODUCTIVITY",
+    title: "COMPLIANCE",
     subtitle: "Organisation et collaboration centralisées",
     description: "Tous vos projets, collaborations et deadlines au même endroit.",
     features: [

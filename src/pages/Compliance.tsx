@@ -16,7 +16,7 @@ const upcomingTasks = [
   { id: 7, title: "Formation comptabilité", date: "28 Jan 2024" },
 ];
 
-const Productivity = () => {
+const Compliance = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high":
@@ -149,4 +149,4 @@ const Productivity = () => {
   );
 };
 
-export default Productivity;
+export default Compliance;
