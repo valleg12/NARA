@@ -145,6 +145,115 @@ const Cashflow = () => {
         </Button>
       </div>
 
+      {/* Chatbox - Au-dessus des statistiques */}
+      <Card className="border-border/50 h-[calc(100vh-300px)] flex flex-col">
+        <CardHeader>
+          <CardTitle className="font-display text-xl font-semibold">
+            Chat avec l'agent financier NARA
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 flex flex-col gap-4 p-4">
+          {/* Zone de messages */}
+          <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center gap-4">
+                <Bot className="w-16 h-16 text-foreground/30" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    Commencez une conversation
+                  </p>
+                  <p className="text-xs text-foreground/60">
+                    Posez une question sur vos finances, factures ou paiements
+                  </p>
+                </div>
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex gap-3 ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {msg.role === "assistant" && (
+                    <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
+                      <Bot className="w-4 h-4 text-gold" />
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[80%] rounded-lg p-4 ${
+                      msg.role === "user"
+                        ? "bg-gold/10 text-foreground"
+                        : "bg-muted/50 text-foreground"
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    <p className="text-xs text-foreground/50 mt-2">
+                      {msg.timestamp.toLocaleTimeString()}
+                    </p>
+                  </div>
+                  {msg.role === "user" && (
+                    <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
+                      <User className="w-4 h-4 text-foreground" />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+            {isAgentLoading && (
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-gold" />
+                </div>
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <p className="text-sm text-foreground/60">L'agent réfléchit...</p>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Zone de saisie */}
+          <div className="space-y-2 border-t border-border/50 pt-4">
+            {error && (
+              <div className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
+                {error}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Textarea
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+              <Button
+                variant="gold"
+                size="lg"
+                onClick={handleSendMessage}
+                disabled={isAgentLoading || !currentMessage.trim()}
+                className="px-6"
+              >
+                {isAgentLoading ? (
+                  "..."
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Financial Overview */}
       <div className="grid md:grid-cols-3 gap-6">
         <Card className="border-border/50 hover-lift transition-all duration-400">
@@ -217,157 +326,42 @@ const Cashflow = () => {
         </CardContent>
       </Card>
 
-      {/* Invoices List and Chat */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Invoices List */}
-        <div className="space-y-4">
-          <h2 className="font-display text-2xl font-semibold text-foreground">Factures récentes</h2>
-          <Card className="border-border/50">
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                {invoices.map((invoice, index) => (
-                  <div
-                    key={invoice.id}
-                    className={`flex items-center justify-between py-4 ${
-                      index !== invoices.length - 1 ? "border-b border-border/30" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-gold" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">Facture #{invoice.id}</p>
-                        <p className="text-sm text-foreground/60">{invoice.client}</p>
-                      </div>
+      {/* Invoices List */}
+      <div className="space-y-4">
+        <h2 className="font-display text-2xl font-semibold text-foreground">Factures récentes</h2>
+        <Card className="border-border/50">
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              {invoices.map((invoice, index) => (
+                <div
+                  key={invoice.id}
+                  className={`flex items-center justify-between py-4 ${
+                    index !== invoices.length - 1 ? "border-b border-border/30" : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-gold/10 flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-gold" />
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-right">
-                        <p className="font-semibold text-foreground">{invoice.amount} €</p>
-                        <p className="text-xs text-foreground/60">{invoice.date}</p>
-                      </div>
-                      <Badge className={getStatusColor(invoice.status)}>
-                        {getStatusText(invoice.status)}
-                      </Badge>
+                    <div>
+                      <p className="font-semibold text-foreground">Facture #{invoice.id}</p>
+                      <p className="text-sm text-foreground/60">{invoice.client}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Chatbox */}
-        <div className="space-y-4">
-          <h2 className="font-display text-2xl font-semibold text-foreground">Assistant financier</h2>
-          <Card className="border-border/50 h-[calc(100vh-400px)] flex flex-col">
-            <CardHeader>
-              <CardTitle className="font-display text-xl font-semibold">
-                Chat avec l'agent financier NARA
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col gap-4 p-4">
-              {/* Zone de messages */}
-              <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
-                {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center gap-4">
-                    <Bot className="w-16 h-16 text-foreground/30" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-foreground">
-                        Commencez une conversation
-                      </p>
-                      <p className="text-xs text-foreground/60">
-                        Posez une question sur vos finances, factures ou paiements
-                      </p>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">{invoice.amount} €</p>
+                      <p className="text-xs text-foreground/60">{invoice.date}</p>
                     </div>
+                    <Badge className={getStatusColor(invoice.status)}>
+                      {getStatusText(invoice.status)}
+                    </Badge>
                   </div>
-                ) : (
-                  messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex gap-3 ${
-                        msg.role === "user" ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      {msg.role === "assistant" && (
-                        <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
-                          <Bot className="w-4 h-4 text-gold" />
-                        </div>
-                      )}
-                      <div
-                        className={`max-w-[80%] rounded-lg p-4 ${
-                          msg.role === "user"
-                            ? "bg-gold/10 text-foreground"
-                            : "bg-muted/50 text-foreground"
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                        <p className="text-xs text-foreground/50 mt-2">
-                          {msg.timestamp.toLocaleTimeString()}
-                        </p>
-                      </div>
-                      {msg.role === "user" && (
-                        <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-foreground" />
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-                {isAgentLoading && (
-                  <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
-                      <Bot className="w-4 h-4 text-gold" />
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4">
-                      <p className="text-sm text-foreground/60">L'agent réfléchit...</p>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Zone de saisie */}
-              <div className="space-y-2 border-t border-border/50 pt-4">
-                {error && (
-                  <div className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
-                    {error}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <Textarea
-                      value={currentMessage}
-                      onChange={(e) => setCurrentMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      placeholder="Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"
-                      rows={2}
-                      className="resize-none"
-                    />
-                  </div>
-                  <Button
-                    variant="gold"
-                    size="lg"
-                    onClick={handleSendMessage}
-                    disabled={isAgentLoading || !currentMessage.trim()}
-                    className="px-6"
-                  >
-                    {isAgentLoading ? (
-                      "..."
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
