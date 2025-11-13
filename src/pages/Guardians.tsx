@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import DustService from "@/services/DustService";
+import ContractService from "@/services/ContractService";
 
 type ChatMessage = {
   id: string;
@@ -45,49 +47,78 @@ const Guardians = () => {
   const [selectedContract, setSelectedContract] = useState<number | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
-  const [currentFile, setCurrentFile] = useState<File | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isAgentLoading, setIsAgentLoading] = useState(false);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // États pour le modal d'upload de contrat
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [contractFile, setContractFile] = useState<File | null>(null);
+  const [isUploadingContract, setIsUploadingContract] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const contractFileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const handleFileSelection = (file?: File) => {
+  // Gestion upload contrat (vers N8N)
+  const handleContractFileSelection = (file?: File) => {
     if (!file) {
       return;
     }
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
       setError("Seuls les fichiers PDF sont autorisés.");
-      setCurrentFile(null);
+      setContractFile(null);
       return;
     }
     setError(null);
-    setCurrentFile(file);
+    setContractFile(file);
   };
 
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleContractInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    handleFileSelection(file);
+    handleContractFileSelection(file);
   };
 
-  const handleDrop = (event: DragEvent<HTMLDivElement>) => {
+  const handleContractDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
     const file = event.dataTransfer.files?.[0];
-    handleFileSelection(file);
+    handleContractFileSelection(file);
   };
 
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+  const handleContractDragOver = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
   };
 
-  const handleRemoveFile = () => {
-    setCurrentFile(null);
+  const handleUploadContract = async () => {
+    if (!contractFile) {
+      setError("Veuillez sélectionner un fichier PDF");
+      return;
+    }
+
+    setIsUploadingContract(true);
     setError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    setUploadSuccess(false);
+
+    try {
+      const result = await ContractService.uploadContract(contractFile);
+      setUploadSuccess(true);
+      console.log("✅ Contrat uploadé:", result);
+      
+      // Fermer le modal après 2 secondes
+      setTimeout(() => {
+        setIsUploadModalOpen(false);
+        setContractFile(null);
+        setUploadSuccess(false);
+        if (contractFileInputRef.current) {
+          contractFileInputRef.current.value = "";
+        }
+      }, 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Une erreur est survenue lors de l'upload";
+      setError(message);
+    } finally {
+      setIsUploadingContract(false);
     }
   };
 
@@ -96,50 +127,29 @@ const Guardians = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!currentMessage.trim() && !currentFile) {
-      setError("Veuillez saisir un message ou joindre un fichier.");
+    if (!currentMessage.trim()) {
+      setError("Veuillez saisir un message.");
       return;
     }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: currentMessage.trim() || "Analyse ce document",
-      file: currentFile || undefined,
+      content: currentMessage.trim(),
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setCurrentMessage("");
-    const fileToSend = currentFile;
-    setCurrentFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
     setError(null);
     setIsAgentLoading(true);
 
     try {
-      let fileIds: string[] | undefined;
-
-      if (fileToSend) {
-        setIsUploadingFile(true);
-        try {
-          const fileId = await DustService.uploadFile(fileToSend);
-          fileIds = [fileId];
-        } finally {
-          setIsUploadingFile(false);
-        }
-      }
-
-      // S'assurer que fileIds est un tableau de strings
-      const cleanFileIds = fileIds ? fileIds.map(id => String(id).trim()).filter(id => id.length > 0) : undefined;
-      
+      // Envoyer uniquement le message texte à Dust (plus de PDF dans le chat)
       const response = await DustService.callAgent({
         message: userMessage.content,
         username: "Manager",
         fullName: "Utilisateur NARA",
-        fileIds: cleanFileIds,
         conversationId: conversationId || undefined,
       });
 
@@ -201,7 +211,7 @@ const Guardians = () => {
             Protection juridique intelligente pour votre carrière
           </p>
         </div>
-        <Button variant="gold" size="lg">
+        <Button variant="gold" size="lg" onClick={() => setIsUploadModalOpen(true)}>
           <Plus className="mr-2 h-5 w-5" />
           Soumettre un contrat
         </Button>
@@ -219,7 +229,7 @@ const Guardians = () => {
             <p className="text-foreground/60 text-center max-w-md mb-6">
               Soumettez votre premier contrat pour une analyse approfondie par notre IA juridique.
             </p>
-            <Button variant="gold" size="lg">
+            <Button variant="gold" size="lg" onClick={() => setIsUploadModalOpen(true)}>
               <Upload className="mr-2 h-5 w-5" />
               Soumettre un contrat
             </Button>
@@ -406,26 +416,6 @@ const Guardians = () => {
                         {error}
                       </div>
                     )}
-                    {currentFile && (
-                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-3">
-                        <FileText className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{currentFile.name}</p>
-                          <p className="text-xs text-foreground/60">
-                            {(currentFile.size / 1024).toFixed(1)} Ko
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleRemoveFile}
-                          className="text-foreground/60 hover:text-foreground flex-shrink-0"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
                     <div className="flex gap-2">
                       <div className="flex-1 relative">
                         <Textarea
@@ -439,36 +429,17 @@ const Guardians = () => {
                           }}
                           placeholder="Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"
                           rows={2}
-                          className="resize-none pr-12"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="absolute right-2 bottom-2"
-                          title="Joindre un fichier PDF"
-                        >
-                          <Upload className="w-4 h-4" />
-                        </Button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="application/pdf"
-                          className="hidden"
-                          onChange={handleInputChange}
+                          className="resize-none"
                         />
                       </div>
                       <Button
                         variant="gold"
                         size="lg"
                         onClick={handleSendMessage}
-                        disabled={isAgentLoading || isUploadingFile || (!currentMessage.trim() && !currentFile)}
+                        disabled={isAgentLoading || !currentMessage.trim()}
                         className="px-6"
                       >
-                        {isUploadingFile ? (
-                          "Upload..."
-                        ) : isAgentLoading ? (
+                        {isAgentLoading ? (
                           "..."
                         ) : (
                           <Send className="w-4 h-4" />
@@ -482,6 +453,106 @@ const Guardians = () => {
           </div>
         </div>
       )}
+
+      {/* Modal d'upload de contrat */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Soumettre un contrat</DialogTitle>
+            <DialogDescription>
+              Uploadez votre contrat PDF. Il sera analysé par notre IA et vous recevrez un résumé détaillé.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {error && (
+              <div className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                {error}
+              </div>
+            )}
+            
+            {uploadSuccess && (
+              <div className="text-sm text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                Contrat uploadé avec succès ! En cours de traitement...
+              </div>
+            )}
+
+            {!contractFile ? (
+              <div
+                onDrop={handleContractDrop}
+                onDragOver={handleContractDragOver}
+                className="border-2 border-dashed border-border/50 rounded-lg p-8 text-center hover:border-gold/50 transition-colors cursor-pointer"
+                onClick={() => contractFileInputRef.current?.click()}
+              >
+                <Upload className="w-12 h-12 text-foreground/40 mx-auto mb-4" />
+                <p className="text-sm font-medium text-foreground mb-2">
+                  Glissez-déposez votre PDF ici
+                </p>
+                <p className="text-xs text-foreground/60 mb-4">ou</p>
+                <Button variant="outline" size="sm">
+                  Sélectionner un fichier
+                </Button>
+                <input
+                  ref={contractFileInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={handleContractInputChange}
+                />
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-4">
+                <FileText className="w-8 h-8 text-gold flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{contractFile.name}</p>
+                  <p className="text-xs text-foreground/60">
+                    {(contractFile.size / 1024).toFixed(1)} Ko
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setContractFile(null);
+                    if (contractFileInputRef.current) {
+                      contractFileInputRef.current.value = "";
+                    }
+                  }}
+                  className="text-foreground/60 hover:text-foreground flex-shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setContractFile(null);
+                  setError(null);
+                  setUploadSuccess(false);
+                  if (contractFileInputRef.current) {
+                    contractFileInputRef.current.value = "";
+                  }
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="gold"
+                onClick={handleUploadContract}
+                disabled={!contractFile || isUploadingContract || uploadSuccess}
+              >
+                {isUploadingContract ? "Upload en cours..." : uploadSuccess ? "Uploadé ✓" : "Envoyer"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
