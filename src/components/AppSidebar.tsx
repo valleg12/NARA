@@ -18,7 +18,7 @@ const AppSidebar = () => {
       {/* Logo */}
       <div className="p-6 border-b border-border/50">
         <Link to="/app" className="flex items-center">
-          <img src={logo} alt="NARA" className="h-16 w-auto" />
+          <img src={logo} alt="NARA" className="h-32 w-auto" />
         </Link>
       </div>
 
