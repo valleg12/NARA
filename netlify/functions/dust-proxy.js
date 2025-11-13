@@ -126,12 +126,23 @@ export const handler = async (event, context) => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("❌ Erreur Dust API REST (message):", errorData);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { raw: errorText };
+        }
+        
+        console.error("❌ Erreur Dust API REST (message) (status:", response.status, "):");
+        console.error("Body:", errorText);
+        console.error("Parsed:", JSON.stringify(errorData, null, 2));
+        
         return {
           statusCode: response.status,
           body: JSON.stringify({
-            error: errorData.error?.message ?? JSON.stringify(errorData),
+            error: errorData.error?.message ?? errorData.message ?? errorText,
+            details: errorData,
           }),
         };
       }
@@ -195,12 +206,24 @@ export const handler = async (event, context) => {
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("❌ Erreur Dust API REST:", errorData);
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { raw: errorText };
+        }
+        
+        console.error("❌ Erreur Dust API REST (status:", response.status, "):");
+        console.error("Headers:", JSON.stringify([...response.headers.entries()], null, 2));
+        console.error("Body:", errorText);
+        console.error("Parsed:", JSON.stringify(errorData, null, 2));
+        
         return {
           statusCode: response.status,
           body: JSON.stringify({
-            error: errorData.error?.message ?? JSON.stringify(errorData),
+            error: errorData.error?.message ?? errorData.message ?? errorText,
+            details: errorData,
           }),
         };
       }
