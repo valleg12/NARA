@@ -14,47 +14,47 @@ All colors MUST be HSL.
     /* Accent: Sable Doré #DBCAB4 - Potentiel, encouragement, qualité */
     /* Soutien: Terre de Sienne Douce #B59A84 - Chaleur, empathie, humanité */
     
-    --background: 40 23% 95%; /* Craie #F5F3EF */
-    --foreground: 210 38% 16%; /* Bleu Crépuscule #1A2A3A */
+    --background: 210 38% 16%; /* Bleu Crépuscule #1A2A3A - Fond */
+    --foreground: 27 25% 61%; /* Terre de Sienne #B59A84 - Texte */
 
-    --card: 40 23% 95%; /* Craie */
-    --card-foreground: 210 38% 16%; /* Bleu Crépuscule */
+    --card: 210 38% 20%; /* Bleu Crépuscule légèrement plus clair */
+    --card-foreground: 27 25% 61%; /* Terre de Sienne */
 
-    --popover: 40 23% 95%; /* Craie */
-    --popover-foreground: 210 38% 16%; /* Bleu Crépuscule */
+    --popover: 210 38% 20%; /* Bleu Crépuscule */
+    --popover-foreground: 27 25% 61%; /* Terre de Sienne */
 
-    --primary: 210 38% 16%; /* Bleu Crépuscule #1A2A3A */
-    --primary-foreground: 40 23% 95%; /* Craie #F5F3EF */
+    --primary: 40 23% 95%; /* Craie #F5F3EF - Boutons */
+    --primary-foreground: 210 38% 16%; /* Bleu Crépuscule */
 
-    --secondary: 40 23% 95%; /* Craie */
-    --secondary-foreground: 210 38% 16%; /* Bleu Crépuscule */
+    --secondary: 210 38% 20%; /* Bleu Crépuscule */
+    --secondary-foreground: 27 25% 61%; /* Terre de Sienne */
 
-    --muted: 27 25% 61%; /* Terre de Sienne Douce #B59A84 */
-    --muted-foreground: 210 20% 40%;
+    --muted: 210 30% 25%; /* Bleu Crépuscule pour éléments muted */
+    --muted-foreground: 27 25% 70%; /* Terre de Sienne plus clair */
 
-    --accent: 34 35% 78%; /* Sable Doré #DBCAB4 */
+    --accent: 40 23% 95%; /* Craie #F5F3EF - Accents */
     --accent-foreground: 210 38% 16%; /* Bleu Crépuscule */
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 40 23% 95%;
 
-    --border: 27 25% 75%; /* Terre de Sienne Douce (légèrement plus clair) */
-    --input: 27 25% 75%;
+    --border: 34 35% 78%; /* Sable Doré #DBCAB4 - Bordures */
+    --input: 34 35% 78%; /* Sable Doré */
     --ring: 34 35% 78%; /* Sable Doré */
 
     --radius: 0.75rem;
 
     /* Custom tokens for NARA - Nouvelles couleurs */
-    --gold: 34 35% 78%; /* Sable Doré #DBCAB4 (remplace l'ancien gold) */
-    --gold-light: 34 35% 85%; /* Sable Doré plus clair */
-    --navy: 210 38% 16%; /* Bleu Crépuscule #1A2A3A (remplace l'ancien navy) */
+    --gold: 40 23% 95%; /* Craie #F5F3EF - Pour boutons et accents */
+    --gold-light: 40 23% 98%; /* Craie plus clair */
+    --navy: 210 38% 16%; /* Bleu Crépuscule #1A2A3A - Fond */
     --ivory: 40 23% 95%; /* Craie #F5F3EF */
-    --beige: 27 25% 61%; /* Terre de Sienne Douce #B59A84 */
-    --support: 27 25% 61%; /* Terre de Sienne Douce #B59A84 */
+    --beige: 27 25% 61%; /* Terre de Sienne #B59A84 - Texte */
+    --support: 27 25% 61%; /* Terre de Sienne #B59A84 */
 
     /* Gradients */
-    --gradient-gold: linear-gradient(135deg, hsl(34 35% 85%), hsl(34 35% 78%));
-    --gradient-subtle: linear-gradient(180deg, hsl(40 23% 95%), hsl(27 25% 75%));
+    --gradient-gold: linear-gradient(135deg, hsl(40 23% 98%), hsl(40 23% 95%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210 38% 16%), hsl(210 38% 20%));
 
     /* Shadows */
     --shadow-soft: 0 10px 40px -10px hsl(210 38% 16% / 0.08);
@@ -64,53 +64,53 @@ All colors MUST be HSL.
     --transition-smooth: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 40 23% 95%; /* Craie */
-    --sidebar-foreground: 210 38% 16%; /* Bleu Crépuscule */
-    --sidebar-primary: 210 38% 16%; /* Bleu Crépuscule */
-    --sidebar-primary-foreground: 40 23% 95%; /* Craie */
-    --sidebar-accent: 34 35% 78%; /* Sable Doré */
+    --sidebar-background: 210 38% 16%; /* Bleu Crépuscule - Fond */
+    --sidebar-foreground: 27 25% 61%; /* Terre de Sienne - Texte */
+    --sidebar-primary: 40 23% 95%; /* Craie - Boutons */
+    --sidebar-primary-foreground: 210 38% 16%; /* Bleu Crépuscule */
+    --sidebar-accent: 40 23% 95%; /* Craie */
     --sidebar-accent-foreground: 210 38% 16%; /* Bleu Crépuscule */
-    --sidebar-border: 27 25% 75%; /* Terre de Sienne Douce (légèrement plus clair) */
+    --sidebar-border: 34 35% 78%; /* Sable Doré - Bordures */
     --sidebar-ring: 34 35% 78%; /* Sable Doré */
   }
 
   .dark {
-    /* Mode sombre avec nouvelles couleurs */
-    --background: 210 38% 16%; /* Bleu Crépuscule */
-    --foreground: 40 23% 95%; /* Craie */
+    /* Mode sombre - même palette mais inversée */
+    --background: 210 38% 10%; /* Bleu Crépuscule encore plus foncé */
+    --foreground: 27 25% 70%; /* Terre de Sienne plus clair */
 
-    --card: 210 38% 20%;
-    --card-foreground: 40 23% 95%;
+    --card: 210 38% 14%;
+    --card-foreground: 27 25% 70%;
 
-    --popover: 210 38% 20%;
-    --popover-foreground: 40 23% 95%;
+    --popover: 210 38% 14%;
+    --popover-foreground: 27 25% 70%;
 
-    --primary: 40 23% 95%; /* Craie */
+    --primary: 40 23% 95%; /* Craie - Boutons */
     --primary-foreground: 210 38% 16%; /* Bleu Crépuscule */
 
-    --secondary: 210 30% 25%;
-    --secondary-foreground: 40 23% 95%;
+    --secondary: 210 30% 20%;
+    --secondary-foreground: 27 25% 70%;
 
-    --muted: 210 30% 25%;
-    --muted-foreground: 33 20% 70%;
+    --muted: 210 30% 20%;
+    --muted-foreground: 27 25% 50%;
 
-    --accent: 34 35% 78%; /* Sable Doré */
+    --accent: 40 23% 95%; /* Craie */
     --accent-foreground: 210 38% 16%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 40 23% 95%;
 
-    --border: 210 30% 25%;
-    --input: 210 30% 25%;
+    --border: 34 35% 78%; /* Sable Doré */
+    --input: 34 35% 78%;
     --ring: 34 35% 78%;
 
-    --sidebar-background: 210 38% 16%;
-    --sidebar-foreground: 40 23% 95%;
-    --sidebar-primary: 34 35% 78%;
+    --sidebar-background: 210 38% 10%;
+    --sidebar-foreground: 27 25% 70%;
+    --sidebar-primary: 40 23% 95%;
     --sidebar-primary-foreground: 210 38% 16%;
-    --sidebar-accent: 210 30% 25%;
-    --sidebar-accent-foreground: 40 23% 95%;
-    --sidebar-border: 210 30% 25%;
+    --sidebar-accent: 40 23% 95%;
+    --sidebar-accent-foreground: 210 38% 16%;
+    --sidebar-border: 34 35% 78%;
     --sidebar-ring: 34 35% 78%;
   }
 }
