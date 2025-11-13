@@ -152,9 +152,9 @@ const Cashflow = () => {
             Chat avec l'agent financier NARA
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 flex flex-col gap-4 p-4">
+        <CardContent className="flex-1 flex flex-col gap-4 p-4 overflow-hidden">
           {/* Zone de messages */}
-          <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+          <div className="flex-1 overflow-y-auto space-y-4 min-h-0 pr-2">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center gap-4">
                 <Bot className="w-16 h-16 text-foreground/30" />
@@ -181,13 +181,13 @@ const Cashflow = () => {
                     </div>
                   )}
                       <div
-                        className={`max-w-[80%] min-w-0 rounded-lg p-4 ${
+                        className={`max-w-[80%] rounded-lg p-4 ${
                           msg.role === "user"
                             ? "bg-gold/10 text-foreground"
                             : "bg-muted/50 text-foreground"
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{msg.content}</p>
+                        <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                         <p className="text-xs text-foreground/50 mt-2">
                           {msg.timestamp.toLocaleTimeString()}
                         </p>
