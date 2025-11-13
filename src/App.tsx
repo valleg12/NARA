@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Guardians from "./pages/Guardians";
 import Cashflow from "./pages/Cashflow";
 import Compliance from "./pages/Compliance";
+import Stockage from "./pages/Stockage";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="guardians" element={<Guardians />} />
             <Route path="cashflow" element={<Cashflow />} />
             <Route path="compliance" element={<Compliance />} />
+            <Route path="stockage" element={<Stockage />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
