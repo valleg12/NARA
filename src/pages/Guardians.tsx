@@ -417,13 +417,45 @@ const Guardians = () => {
                         {error}
                       </div>
                     )}
+                    
+                    {/* Zone de drag & drop pour PDF */}
+                    {!currentFile && (
+                      <div
+                        className="rounded-lg border-2 border-dashed border-border/60 bg-muted/20 p-4 text-center transition-colors hover:border-gold cursor-pointer"
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
+                            <Upload className="w-5 h-5 text-gold" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              Glissez un PDF ici ou cliquez pour sélectionner
+                            </p>
+                            <p className="text-xs text-foreground/60 mt-1">
+                              Le texte sera extrait automatiquement et analysé par l'agent
+                            </p>
+                          </div>
+                        </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    )}
+
                     {currentFile && (
-                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-3">
+                      <div className="flex items-start gap-3 rounded-lg border border-gold/30 bg-gold/5 p-3">
                         <FileText className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{currentFile.name}</p>
                           <p className="text-xs text-foreground/60">
-                            {(currentFile.size / 1024).toFixed(1)} Ko
+                            {(currentFile.size / 1024).toFixed(1)} Ko - Prêt à être analysé
                           </p>
                         </div>
                         <Button
@@ -437,6 +469,7 @@ const Guardians = () => {
                         </Button>
                       </div>
                     )}
+                    
                     <div className="flex gap-2">
                       <div className="flex-1 relative">
                         <Textarea
@@ -448,26 +481,9 @@ const Guardians = () => {
                               handleSendMessage();
                             }
                           }}
-                          placeholder="Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"
+                          placeholder={currentFile ? "Ajoutez un message (optionnel) ou envoyez directement..." : "Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"}
                           rows={2}
-                          className="resize-none pr-12"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="absolute right-2 bottom-2"
-                          title="Joindre un fichier PDF"
-                        >
-                          <Upload className="w-4 h-4" />
-                        </Button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="application/pdf"
-                          className="hidden"
-                          onChange={handleInputChange}
+                          className="resize-none"
                         />
                       </div>
                       <Button
@@ -478,7 +494,7 @@ const Guardians = () => {
                         className="px-6"
                       >
                         {isUploadingFile ? (
-                          "Upload..."
+                          "Extraction..."
                         ) : isAgentLoading ? (
                           "..."
                         ) : (
