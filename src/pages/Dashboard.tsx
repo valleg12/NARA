@@ -9,7 +9,7 @@ const Dashboard = () => {
       {/* Welcome Message */}
       <div className="space-y-2">
         <h1 className="font-display text-4xl font-semibold text-foreground">
-          Bonjour Marie, bienvenue dans votre univers.
+          Bonjour NARAGent, bienvenue dans votre univers.
         </h1>
         <p className="text-foreground/60 text-lg">
           Voici votre aperçu quotidien

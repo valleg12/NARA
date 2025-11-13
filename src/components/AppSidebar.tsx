@@ -68,10 +68,10 @@ const AppSidebar = () => {
         
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-sm font-semibold text-foreground">
-            MC
+            NG
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">Marie C.</p>
+            <p className="text-sm font-medium text-foreground truncate">NARAGent</p>
             <button className="text-xs text-foreground/60 hover:text-foreground flex items-center gap-1 transition-colors">
               <LogOut className="w-3 h-3" />
               Déconnexion
