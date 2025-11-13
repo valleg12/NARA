@@ -371,7 +371,7 @@ const Guardians = () => {
                             </div>
                           )}
                           <div
-                            className={`max-w-[80%] rounded-lg p-4 ${
+                            className={`max-w-[80%] min-w-0 rounded-lg p-4 ${
                               msg.role === "user"
                                 ? "bg-gold/10 text-foreground"
                                 : "bg-muted/50 text-foreground"
@@ -383,7 +383,7 @@ const Guardians = () => {
                                 <span className="text-xs font-medium">{msg.file.name}</span>
                               </div>
                             )}
-                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{msg.content}</p>
                             <p className="text-xs text-foreground/50 mt-2">
                               {msg.timestamp.toLocaleTimeString()}
                             </p>

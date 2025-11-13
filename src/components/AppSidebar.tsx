@@ -6,8 +6,8 @@ import logo from "@/assets/logo.svg";
 const navigation = [
   { name: "Accueil", href: "/app" },
   { name: "GUARDIANS", href: "/app/guardians" },
-  { name: "CASHFLOW", href: "/app/cashflow" },
-  { name: "COMPLIANCE", href: "/app/compliance" },
+  { name: "FLOW", href: "/app/cashflow" },
+  { name: "ORBIT", href: "/app/compliance" },
 ];
 
 const AppSidebar = () => {

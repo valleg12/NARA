@@ -180,18 +180,18 @@ const Cashflow = () => {
                       <Bot className="w-4 h-4 text-gold" />
                     </div>
                   )}
-                  <div
-                    className={`max-w-[80%] rounded-lg p-4 ${
-                      msg.role === "user"
-                        ? "bg-gold/10 text-foreground"
-                        : "bg-muted/50 text-foreground"
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    <p className="text-xs text-foreground/50 mt-2">
-                      {msg.timestamp.toLocaleTimeString()}
-                    </p>
-                  </div>
+                      <div
+                        className={`max-w-[80%] min-w-0 rounded-lg p-4 ${
+                          msg.role === "user"
+                            ? "bg-gold/10 text-foreground"
+                            : "bg-muted/50 text-foreground"
+                        }`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere">{msg.content}</p>
+                        <p className="text-xs text-foreground/50 mt-2">
+                          {msg.timestamp.toLocaleTimeString()}
+                        </p>
+                      </div>
                   {msg.role === "user" && (
                     <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
                       <User className="w-4 h-4 text-foreground" />
