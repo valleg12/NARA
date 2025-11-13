@@ -15,8 +15,8 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const payload = JSON.parse(event.body ?? "{}");
-    const { fileName, fileType = "application/pdf", fileBase64 } = payload;
+    const requestPayload = JSON.parse(event.body ?? "{}");
+    const { fileName, fileType = "application/pdf", fileBase64 } = requestPayload;
 
     if (!fileBase64 || !fileName) {
       return {
