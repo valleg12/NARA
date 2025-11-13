@@ -1,4 +1,6 @@
 import { Buffer } from "node:buffer";
+import FormData from "form-data";
+import fetch from "node-fetch";
 
 const workspaceId = "Z1YDH1d9W9";
 const apiKey = process.env.DUST_API_KEY ?? "sk-bf49d6cbdca92c3c0498c86047ec1608";
@@ -24,16 +26,26 @@ export const handler = async (event, context) => {
       };
     }
 
-    const fileBuffer = Buffer.from(fileBase64, "base64");
-    const blob = new Blob([fileBuffer], { type: fileType });
+    // Extraire le base64 pur (enlever le préfixe data:application/pdf;base64, si présent)
+    const base64Data = fileBase64.includes(",") 
+      ? fileBase64.split(",")[1] 
+      : fileBase64;
+    
+    const fileBuffer = Buffer.from(base64Data, "base64");
 
+    // Créer FormData avec form-data package (compatible Node.js)
     const formData = new FormData();
-    formData.append("file", blob, fileName);
+    formData.append("file", fileBuffer, {
+      filename: fileName,
+      contentType: fileType,
+    });
 
     const response = await fetch(`https://eu.dust.tt/api/v1/w/${workspaceId}/files`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
+        // Ne pas mettre Content-Type, form-data le gère automatiquement via getHeaders()
+        ...formData.getHeaders(),
       },
       body: formData,
     });
@@ -41,9 +53,10 @@ export const handler = async (event, context) => {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error("Erreur upload Dust:", data);
       return {
         statusCode: response.status,
-        body: JSON.stringify(data),
+        body: JSON.stringify({ error: data.error?.message ?? JSON.stringify(data) }),
       };
     }
 
@@ -51,7 +64,6 @@ export const handler = async (event, context) => {
       statusCode: 200,
       body: JSON.stringify({
         fileId: data.file?.id ?? data.file?.sId ?? data.id,
-        file: data.file ?? data,
       }),
     };
   } catch (error) {
