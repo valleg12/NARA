@@ -27,17 +27,12 @@ exports.handler = async (event, context) => {
     const payload = JSON.parse(event.body ?? "{}");
     const { message, username, email, fullName, fileIds, conversationId } = payload;
 
-    // S'assurer que message est une string non vide
-    const cleanMessage = message ? String(message).trim() : "";
-    if (cleanMessage.length === 0 && (!fileIds || fileIds.length === 0)) {
+    if (typeof message !== "string" || message.trim().length === 0) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Le champ message est requis ou un fichier doit être fourni." }),
+        body: JSON.stringify({ error: "Le champ message est requis." }),
       };
     }
-    
-    // Si message est vide mais qu'on a un fichier, utiliser un message par défaut
-    const finalMessage = cleanMessage.length > 0 ? cleanMessage : "Analyse ce document";
 
     // Construire contentFragments au format exact attendu par Dust (tableau d'objets avec fileId)
     const hasFiles = Array.isArray(fileIds) && fileIds.length > 0;
@@ -77,10 +72,14 @@ exports.handler = async (event, context) => {
     }
 
     // Construire le message payload (DOIT être un objet, pas une string)
-    // IMPORTANT: contentFragments doit être au niveau du payload principal, PAS dans message
+    // Pour les nouvelles conversations, contentFragments va dans message
+    // Pour les conversations existantes, contentFragments va au niveau du payload principal
     const messagePayload = {
-      content: finalMessage, // Message final (non vide)
+      content: String(message || ""), // S'assurer que content est une string (même vide)
       mentions: [{ configurationId: String(agentId) }], // S'assurer que configurationId est une string
+      ...(hasFiles && contentFragments.length > 0 && {
+        contentFragments: contentFragments // DANS message pour nouvelles conversations
+      }),
       context: {
         username: String(username ?? "Utilisateur"),
         timezone: "Europe/Paris",
@@ -90,37 +89,43 @@ exports.handler = async (event, context) => {
       },
     };
     
-    // Validation que tous les champs requis sont présents
-    if (!messagePayload.content || !messagePayload.mentions || !messagePayload.context) {
-      console.error("❌ Message payload incomplet:", messagePayload);
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Erreur interne: message payload incomplet" }),
-      };
-    }
-    
     console.log("📝 Message payload construit:", JSON.stringify(messagePayload, null, 2));
 
     // Si on a une conversation existante, ajouter un message à cette conversation
     if (conversationId && typeof conversationId === "string" && conversationId.trim().length > 0) {
       console.log("💬 Réponse à conversation existante:", conversationId);
       
-      // Pour les messages dans une conversation existante, contentFragments va au niveau du payload principal
-      const messageRequestPayload = {
-        message: messagePayload, // Objet message (sans contentFragments)
-        ...(hasFiles && contentFragments.length > 0 && { 
-          contentFragments: contentFragments // Au niveau du payload principal
-        }),
-        blocking: true,
+      // Pour les messages dans une conversation existante, contentFragments doit être DANS message, pas au niveau principal
+      // Créer un nouveau messagePayload sans contentFragments dans message (on l'ajoutera au payload principal)
+      const messageForExistingConv = {
+        content: String(message || ""),
+        mentions: [{ configurationId: String(agentId) }],
+        context: {
+          username: String(username ?? "Utilisateur"),
+          timezone: "Europe/Paris",
+          email: email ? String(email) : null,
+          fullName: fullName ? String(fullName) : null,
+          origin: "api",
+        },
       };
       
-      // Validation finale
-      if (!messageRequestPayload.message || !messageRequestPayload.message.content) {
-        console.error("❌ Message payload invalide pour réponse:", messageRequestPayload);
-        return {
-          statusCode: 500,
-          body: JSON.stringify({ error: "Erreur interne: message payload invalide" }),
-        };
+      const messageRequestPayload = {
+        message: messageForExistingConv, // Message SANS contentFragments
+        ...(hasFiles && contentFragments.length > 0 && { 
+          contentFragments: contentFragments // Au niveau du payload principal pour conversations existantes
+        }),
+        blocking: true, // true = synchrone (on attend la réponse)
+      };
+      
+      // Validation
+      if (hasFiles && contentFragments.length > 0) {
+        if (!Array.isArray(messageRequestPayload.contentFragments)) {
+          console.error("❌ contentFragments n'est pas un tableau");
+          return {
+            statusCode: 500,
+            body: JSON.stringify({ error: "Erreur interne: format contentFragments invalide" }),
+          };
+        }
       }
       
       console.log("📤 Payload message (conversation existante):", JSON.stringify(messageRequestPayload, null, 2));
@@ -181,24 +186,23 @@ exports.handler = async (event, context) => {
     // Sinon, créer une nouvelle conversation
     // Si on a des fichiers, utiliser l'API REST directe (le SDK peut avoir des problèmes avec contentFragments)
     if (hasFiles && contentFragments.length > 0) {
-      // Construire le payload final - contentFragments au niveau du payload principal
+      // Construire le payload final - contentFragments est DÉJÀ dans messagePayload
       const payload = {
-        message: messagePayload, // Objet message (sans contentFragments)
-        contentFragments: contentFragments, // Au niveau du payload principal
+        message: messagePayload, // Objet avec contentFragments DÉJÀ inclus dans message
         visibility: "unlisted",
-        blocking: true, // true = réponse synchrone (plus simple pour MVP), false = asynchrone (nécessite polling/webhook)
+        blocking: true, // true = synchrone (on attend la réponse)
       };
 
-      // Validation finale
-      if (!Array.isArray(payload.contentFragments)) {
-        console.error("❌ contentFragments n'est pas un tableau:", payload);
+      // Validation finale - contentFragments est dans message
+      if (!Array.isArray(payload.message.contentFragments)) {
+        console.error("❌ contentFragments n'est pas un tableau dans message:", payload.message);
         return {
           statusCode: 500,
           body: JSON.stringify({ error: "Erreur interne: format contentFragments invalide" }),
         };
       }
       
-      payload.contentFragments.forEach((frag, idx) => {
+      payload.message.contentFragments.forEach((frag, idx) => {
         if (typeof frag !== "object" || typeof frag.fileId !== "string") {
           console.error(`❌ contentFragments[${idx}] invalide:`, frag);
         }
