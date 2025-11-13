@@ -32,24 +32,31 @@ export const handler = async (event, context) => {
       : fileBase64;
     
     const fileBuffer = Buffer.from(base64Data, "base64");
+    const fileSize = fileBuffer.length;
 
-    // Créer FormData avec form-data package (compatible Node.js)
-    const formData = new FormData();
-    formData.append("file", fileBuffer, {
-      filename: fileName,
-      contentType: fileType,
+    // L'API Dust attend un format JSON spécifique, pas FormData !
+    const payload = {
+      fileName: fileName,
+      fileSize: fileSize,
+      contentType: fileType || "application/pdf",
+      useCase: "conversation", // "conversation" ou "upsert_table"
+      file: base64Data, // Le fichier en base64 (sans préfixe)
+    };
+
+    console.log("📤 Upload vers Dust (JSON):", { 
+      fileName, 
+      fileType, 
+      fileSize,
+      useCase: payload.useCase 
     });
-
-    console.log("📤 Upload vers Dust:", { fileName, fileType, size: fileBuffer.length });
 
     const response = await fetch(`https://eu.dust.tt/api/v1/w/${workspaceId}/files`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        // Ne pas mettre Content-Type, form-data le gère automatiquement via getHeaders()
-        ...formData.getHeaders(),
+        "Content-Type": "application/json",
       },
-      body: formData,
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();

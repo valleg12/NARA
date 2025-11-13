@@ -16,13 +16,47 @@ async function testUpload() {
   console.log("🧪 Test 1: Upload d'un fichier PDF vers Dust\n");
   
   // Créer un PDF de test minimal (ou utiliser un fichier existant)
-  const testPdfPath = process.argv[2] || "./test.pdf";
+  let testPdfPath = process.argv[2] || "./test.pdf";
   
   if (!fs.existsSync(testPdfPath)) {
-    console.log("❌ Fichier de test non trouvé:", testPdfPath);
-    console.log("💡 Créez un fichier test.pdf ou passez le chemin en argument");
-    console.log("   Ex: node test-dust-upload.js /path/to/file.pdf\n");
-    return null;
+    console.log("⚠️  Fichier de test non trouvé:", testPdfPath);
+    console.log("📝 Création d'un PDF de test minimal...\n");
+    
+    // Créer un PDF minimal valide (format PDF simple)
+    // Header PDF + un objet minimal
+    const minimalPdf = Buffer.from(
+      "%PDF-1.4\n" +
+      "1 0 obj\n" +
+      "<< /Type /Catalog /Pages 2 0 R >>\n" +
+      "endobj\n" +
+      "2 0 obj\n" +
+      "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" +
+      "endobj\n" +
+      "3 0 obj\n" +
+      "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> >>\n" +
+      "endobj\n" +
+      "4 0 obj\n" +
+      "<< /Length 44 >>\n" +
+      "stream\n" +
+      "BT /F1 12 Tf 100 700 Td (Test PDF for Dust API) Tj ET\n" +
+      "endstream\n" +
+      "endobj\n" +
+      "xref\n" +
+      "0 5\n" +
+      "0000000000 65535 f \n" +
+      "0000000009 00000 n \n" +
+      "0000000058 00000 n \n" +
+      "0000000115 00000 n \n" +
+      "0000000306 00000 n \n" +
+      "trailer\n" +
+      "<< /Size 5 /Root 1 0 R >>\n" +
+      "startxref\n" +
+      "400\n" +
+      "%%EOF"
+    );
+    
+    fs.writeFileSync(testPdfPath, minimalPdf);
+    console.log("✅ PDF de test créé:", testPdfPath, `(${minimalPdf.length} bytes)\n`);
   }
   
   const fileBuffer = fs.readFileSync(testPdfPath);
@@ -30,7 +64,9 @@ async function testUpload() {
   
   console.log(`📄 Fichier: ${fileName} (${fileBuffer.length} bytes)\n`);
   
-  // Créer FormData
+  // Tester différentes méthodes d'upload
+  console.log("📤 Test upload - Méthode 1: FormData standard...\n");
+  
   const formData = new FormData();
   formData.append("file", fileBuffer, {
     filename: fileName,
@@ -38,8 +74,7 @@ async function testUpload() {
   });
   
   try {
-    console.log("📤 Upload vers Dust...");
-    const uploadResponse = await fetch(`https://eu.dust.tt/api/v1/w/${workspaceId}/files`, {
+    let uploadResponse = await fetch(`https://eu.dust.tt/api/v1/w/${workspaceId}/files`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -48,8 +83,57 @@ async function testUpload() {
       body: formData,
     });
     
-    const uploadData = await uploadResponse.json();
-    console.log("📥 Réponse upload:", JSON.stringify(uploadData, null, 2));
+    let uploadData = await uploadResponse.json();
+    console.log("📥 Réponse (FormData):", JSON.stringify(uploadData, null, 2));
+    
+    if (!uploadResponse.ok) {
+      console.log("\n📤 Test upload - Méthode 2: FormData avec champ 'data'...\n");
+      
+      const formData2 = new FormData();
+      formData2.append("data", fileBuffer, {
+        filename: fileName,
+        contentType: "application/pdf",
+      });
+      
+      uploadResponse = await fetch(`https://eu.dust.tt/api/v1/w/${workspaceId}/files`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          ...formData2.getHeaders(),
+        },
+        body: formData2,
+      });
+      
+      uploadData = await uploadResponse.json();
+      console.log("📥 Réponse (FormData 'data'):", JSON.stringify(uploadData, null, 2));
+    }
+    
+    if (!uploadResponse.ok) {
+      console.log("\n📤 Test upload - Méthode 3: JSON avec format Dust API...\n");
+      
+      const base64 = fileBuffer.toString('base64');
+      const payload = {
+        fileName: fileName,
+        fileSize: fileBuffer.length,
+        contentType: "application/pdf",
+        useCase: "conversation",
+        file: base64, // Le fichier en base64
+      };
+      
+      console.log("📤 Payload JSON:", JSON.stringify({ ...payload, file: "[base64...]" }, null, 2));
+      
+      uploadResponse = await fetch(`https://eu.dust.tt/api/v1/w/${workspaceId}/files`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      uploadData = await uploadResponse.json();
+      console.log("📥 Réponse (JSON format Dust):", JSON.stringify(uploadData, null, 2));
+    }
     
     if (!uploadResponse.ok) {
       console.error("❌ Erreur upload:", uploadData);
