@@ -1,10 +1,18 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus, X } from "lucide-react";
+import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus, X, Send, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import DustService from "@/services/DustService";
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  file?: File;
+  timestamp: Date;
+};
 
 const contracts = [
   {
@@ -35,27 +43,28 @@ const contracts = [
 
 const Guardians = () => {
   const [selectedContract, setSelectedContract] = useState<number | null>(null);
-  const [agentMessage, setAgentMessage] = useState("");
-  const [agentResponse, setAgentResponse] = useState<string | null>(null);
-  const [agentError, setAgentError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [isAgentLoading, setIsAgentLoading] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const handleFileSelection = (file?: File) => {
     if (!file) {
       return;
     }
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
-      setUploadError("Seuls les fichiers PDF sont autorisés.");
-      setUploadedFile(null);
+      setError("Seuls les fichiers PDF sont autorisés.");
+      setCurrentFile(null);
       return;
     }
-    setUploadError(null);
-    setUploadedFile(file);
+    setError(null);
+    setCurrentFile(file);
   };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -75,30 +84,48 @@ const Guardians = () => {
   };
 
   const handleRemoveFile = () => {
-    setUploadedFile(null);
-    setUploadError(null);
+    setCurrentFile(null);
+    setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  const handleAskAgent = async () => {
-    if (!agentMessage.trim()) {
-      setAgentError("Veuillez saisir une question ou un besoin avant d'appeler l'agent.");
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleSendMessage = async () => {
+    if (!currentMessage.trim() && !currentFile) {
+      setError("Veuillez saisir un message ou joindre un fichier.");
       return;
     }
 
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: currentMessage.trim() || "Analyse ce document",
+      file: currentFile || undefined,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setCurrentMessage("");
+    const fileToSend = currentFile;
+    setCurrentFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setError(null);
     setIsAgentLoading(true);
-    setAgentError(null);
-    setAgentResponse(null);
 
     try {
       let fileIds: string[] | undefined;
 
-      if (uploadedFile) {
+      if (fileToSend) {
         setIsUploadingFile(true);
         try {
-          const fileId = await DustService.uploadFile(uploadedFile);
+          const fileId = await DustService.uploadFile(fileToSend);
           fileIds = [fileId];
         } finally {
           setIsUploadingFile(false);
@@ -106,17 +133,31 @@ const Guardians = () => {
       }
 
       const response = await DustService.callAgent({
-        message: agentMessage,
+        message: userMessage.content,
         username: "Manager",
         fullName: "Utilisateur NARA",
         fileIds,
+        conversationId: conversationId || undefined,
       });
-      setAgentResponse(response);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Une erreur inattendue est survenue.";
-      setAgentError(message);
+
+      if (response.conversationId) {
+        setConversationId(response.conversationId);
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: response.message || "Aucune réponse reçue.",
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Une erreur inattendue est survenue.";
+      setError(message);
     } finally {
       setIsAgentLoading(false);
+      setTimeout(scrollToBottom, 100);
     }
   };
 
@@ -282,53 +323,130 @@ const Guardians = () => {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-border/50">
-                <CardContent className="flex flex-col gap-6 items-center justify-center py-16">
-                  <div className="flex flex-col items-center text-center gap-2">
-                    <FileText className="w-12 h-12 text-foreground/30" />
-                    <p className="text-foreground/60">
-                      Sélectionnez un contrat pour voir les détails
-                    </p>
-                  </div>
-
-                  <div className="w-full max-w-xl space-y-4">
-                    <div className="text-center space-y-1">
-                      <h3 className="font-display text-lg font-semibold text-foreground">
-                        Besoin d'une analyse rapide ?
-                      </h3>
-                      <p className="text-sm text-foreground/70">
-                        Posez votre question à l'agent juridique NARA pour obtenir un retour instantané.
-                      </p>
-                    </div>
-                    <Textarea
-                      value={agentMessage}
-                      onChange={(event) => setAgentMessage(event.target.value)}
-                      placeholder="Ex. Analyse les risques de non-concurrence sur un contrat freelance de 12 mois..."
-                      rows={4}
-                    />
-                    <div
-                      className="rounded-lg border-2 border-dashed border-border/60 bg-muted/20 p-6 text-center transition-colors hover:border-gold focus-within:border-gold"
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                    >
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center">
-                          <Upload className="w-5 h-5 text-gold" />
-                        </div>
+              <Card className="border-border/50 h-[calc(100vh-200px)] flex flex-col">
+                <CardHeader>
+                  <CardTitle className="font-display text-xl font-semibold">
+                    Chat avec l'agent juridique NARA
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col gap-4 p-4">
+                  {/* Zone de messages */}
+                  <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
+                    {messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-full text-center gap-4">
+                        <Bot className="w-16 h-16 text-foreground/30" />
                         <div className="space-y-1">
                           <p className="text-sm font-medium text-foreground">
-                            Glissez-déposez un contrat au format PDF
+                            Commencez une conversation
                           </p>
                           <p className="text-xs text-foreground/60">
-                            Taille maximale recommandée : 10 Mo
+                            Posez une question ou joignez un document PDF pour analyse
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex gap-3 ${
+                            msg.role === "user" ? "justify-end" : "justify-start"
+                          }`}
+                        >
+                          {msg.role === "assistant" && (
+                            <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
+                              <Bot className="w-4 h-4 text-gold" />
+                            </div>
+                          )}
+                          <div
+                            className={`max-w-[80%] rounded-lg p-4 ${
+                              msg.role === "user"
+                                ? "bg-gold/10 text-foreground"
+                                : "bg-muted/50 text-foreground"
+                            }`}
+                          >
+                            {msg.file && (
+                              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border/30">
+                                <FileText className="w-4 h-4 text-gold" />
+                                <span className="text-xs font-medium">{msg.file.name}</span>
+                              </div>
+                            )}
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            <p className="text-xs text-foreground/50 mt-2">
+                              {msg.timestamp.toLocaleTimeString()}
+                            </p>
+                          </div>
+                          {msg.role === "user" && (
+                            <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0">
+                              <User className="w-4 h-4 text-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                    {isAgentLoading && (
+                      <div className="flex gap-3 justify-start">
+                        <div className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center flex-shrink-0">
+                          <Bot className="w-4 h-4 text-gold" />
+                        </div>
+                        <div className="bg-muted/50 rounded-lg p-4">
+                          <p className="text-sm text-foreground/60">L'agent réfléchit...</p>
+                        </div>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Zone de saisie */}
+                  <div className="space-y-2 border-t border-border/50 pt-4">
+                    {error && (
+                      <div className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg p-2">
+                        {error}
+                      </div>
+                    )}
+                    {currentFile && (
+                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-3">
+                        <FileText className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{currentFile.name}</p>
+                          <p className="text-xs text-foreground/60">
+                            {(currentFile.size / 1024).toFixed(1)} Ko
                           </p>
                         </div>
                         <Button
                           type="button"
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveFile}
+                          className="text-foreground/60 hover:text-foreground flex-shrink-0"
                         >
-                          Parcourir votre ordinateur
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <div className="flex-1 relative">
+                        <Textarea
+                          value={currentMessage}
+                          onChange={(e) => setCurrentMessage(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                            }
+                          }}
+                          placeholder="Tapez votre message... (Entrée pour envoyer, Maj+Entrée pour nouvelle ligne)"
+                          rows={2}
+                          className="resize-none pr-12"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute right-2 bottom-2"
+                          title="Joindre un fichier PDF"
+                        >
+                          <Upload className="w-4 h-4" />
                         </Button>
                         <input
                           ref={fileInputRef}
@@ -337,56 +455,23 @@ const Guardians = () => {
                           className="hidden"
                           onChange={handleInputChange}
                         />
-                        <p className="text-xs text-foreground/50">
-                          Seuls les fichiers PDF sont pris en charge actuellement.
-                        </p>
                       </div>
+                      <Button
+                        variant="gold"
+                        size="lg"
+                        onClick={handleSendMessage}
+                        disabled={isAgentLoading || isUploadingFile || (!currentMessage.trim() && !currentFile)}
+                        className="px-6"
+                      >
+                        {isUploadingFile ? (
+                          "Upload..."
+                        ) : isAgentLoading ? (
+                          "..."
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
-                    {uploadError && <p className="text-sm text-red-600 text-center">{uploadError}</p>}
-                    {uploadedFile && (
-                      <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-4">
-                        <div className="mt-1">
-                          <FileText className="w-5 h-5 text-gold" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-foreground">{uploadedFile.name}</p>
-                          <p className="text-xs text-foreground/60">
-                            {(uploadedFile.size / 1024).toFixed(1)} Ko
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleRemoveFile}
-                          className="text-foreground/60 hover:text-foreground"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                    <Button
-                      variant="gold"
-                      size="lg"
-                      className="w-full"
-                      onClick={handleAskAgent}
-                      disabled={isAgentLoading || isUploadingFile}
-                    >
-                      {isUploadingFile
-                        ? "Téléversement du document..."
-                        : isAgentLoading
-                        ? "Consultation en cours..."
-                        : "Consulter l'agent Dust"}
-                    </Button>
-                    {agentError && (
-                      <div className="text-sm text-red-600 text-center whitespace-pre-wrap">{agentError}</div>
-                    )}
-                    {agentResponse && (
-                      <div className="p-4 rounded-lg border border-border/50 bg-muted/30 text-left space-y-2">
-                        <p className="text-sm font-medium text-foreground">Réponse de l'agent</p>
-                        <p className="text-sm text-foreground/80 whitespace-pre-wrap">{agentResponse}</p>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>

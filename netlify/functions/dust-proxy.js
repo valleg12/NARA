@@ -25,7 +25,7 @@ export const handler = async (event, context) => {
 
   try {
     const payload = JSON.parse(event.body ?? "{}");
-    const { message, username, email, fullName, fileIds } = payload;
+    const { message, username, email, fullName, fileIds, conversationId } = payload;
 
     if (typeof message !== "string" || message.trim().length === 0) {
       return {
@@ -34,7 +34,7 @@ export const handler = async (event, context) => {
       };
     }
 
-    // Construire contentFragments au format exact attendu par Dust
+    // Construire contentFragments au format exact attendu par Dust (tableau d'objets avec fileId)
     const hasFiles = Array.isArray(fileIds) && fileIds.length > 0;
     let contentFragments = [];
     if (hasFiles) {
@@ -46,21 +46,78 @@ export const handler = async (event, context) => {
       console.log("📦 contentFragments créé:", JSON.stringify(contentFragments, null, 2));
     }
 
+    // Construire le message payload
+    const messagePayload = {
+      content: message,
+      mentions: [{ configurationId: agentId }],
+      context: {
+        username: username ?? "Utilisateur",
+        timezone: "Europe/Paris",
+        email: email ?? null,
+        fullName: fullName ?? null,
+        origin: "api",
+      },
+    };
+
+    // Si on a une conversation existante, ajouter un message à cette conversation
+    if (conversationId && typeof conversationId === "string" && conversationId.trim().length > 0) {
+      console.log("💬 Réponse à conversation existante:", conversationId);
+      
+      // Pour les messages dans une conversation existante, contentFragments va dans le payload principal
+      const messageRequestPayload = {
+        message: messagePayload,
+        ...(hasFiles && contentFragments.length > 0 && { contentFragments }),
+        blocking: true,
+      };
+      
+      const response = await fetch(
+        `https://eu.dust.tt/api/v1/w/${workspaceId}/assistant/conversations/${conversationId}/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify(messageRequestPayload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Erreur Dust API REST (message):", errorData);
+        return {
+          statusCode: response.status,
+          body: JSON.stringify({
+            error: errorData.error?.message ?? JSON.stringify(errorData),
+          }),
+        };
+      }
+
+      const data = await response.json();
+      console.log("✅ Réponse Dust API REST (message):", JSON.stringify(data, null, 2));
+
+      const conversation = data.conversation;
+      const agentMessages = conversation.content
+        ?.flat()
+        ?.filter((msg) => msg.type === "agent_message")
+        ?.map((msg) => extractText(msg?.content))
+        ?.filter((text) => typeof text === "string" && text.trim().length > 0) ?? [];
+
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: agentMessages.at(-1) ?? "",
+          conversationId: conversation.sId,
+        }),
+      };
+    }
+
+    // Sinon, créer une nouvelle conversation
     // Si on a des fichiers, utiliser l'API REST directe (le SDK peut avoir des problèmes avec contentFragments)
     if (hasFiles && contentFragments.length > 0) {
       const payload = {
-        message: {
-          content: message,
-          mentions: [{ configurationId: agentId }],
-          context: {
-            username: username ?? "Utilisateur",
-            timezone: "Europe/Paris",
-            email: email ?? null,
-            fullName: fullName ?? null,
-            origin: "api",
-          },
-        },
-        ...(contentFragments.length > 0 && { contentFragments }), // Format recommandé par Dust
+        message: messagePayload,
+        ...(contentFragments.length > 0 && { contentFragments }), // Au niveau du payload principal
         visibility: "unlisted",
         blocking: true, // true = réponse synchrone (plus simple pour MVP), false = asynchrone (nécessite polling/webhook)
       };

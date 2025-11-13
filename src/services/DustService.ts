@@ -4,6 +4,7 @@ type DustAgentPayload = {
   email?: string | null;
   fullName?: string | null;
   fileIds?: string[];
+  conversationId?: string; // Pour répondre à une conversation existante
 };
 
 type DustAgentResponse = {
@@ -22,7 +23,7 @@ class DustService {
     this.uploadProxyUrl = import.meta.env.VITE_DUST_UPLOAD_URL ?? "/.netlify/functions/dust-upload";
   }
 
-  async callAgent(payload: DustAgentPayload): Promise<string> {
+  async callAgent(payload: DustAgentPayload): Promise<DustAgentResponse> {
     const response = await fetch(this.proxyUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -40,11 +41,7 @@ class DustService {
       throw new Error(normalizeError(data, "Erreur Dust API"));
     }
 
-    if (typeof data.message === "string" && data.message.trim().length > 0) {
-      return data.message;
-    }
-
-    return JSON.stringify(data);
+    return data;
   }
 
   async uploadFile(file: File): Promise<string> {
