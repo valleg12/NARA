@@ -1,12 +1,12 @@
-import { Home, Shield, DollarSign, Zap, Settings, LogOut, ArrowLeft } from "lucide-react";
+import { Home, Settings, LogOut, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Accueil", href: "/app", icon: Home },
-  { name: "GUARDIANS", href: "/app/guardians", icon: Shield },
-  { name: "CASHFLOW", href: "/app/cashflow", icon: DollarSign },
-  { name: "COMPLIANCE", href: "/app/compliance", icon: Zap },
+  { name: "GUARDIANS", href: "/app/guardians" },
+  { name: "CASHFLOW", href: "/app/cashflow" },
+  { name: "COMPLIANCE", href: "/app/compliance" },
 ];
 
 const AppSidebar = () => {
@@ -16,8 +16,8 @@ const AppSidebar = () => {
     <aside className="w-64 min-h-screen bg-muted/20 border-r border-border/50 flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-border/50">
-        <Link to="/app" className="font-display text-2xl font-bold text-foreground">
-          NARA
+        <Link to="/app" className="flex items-center">
+          <img src="/logo.svg" alt="NARA" className="h-8 w-auto" />
         </Link>
       </div>
 
@@ -36,12 +36,14 @@ const AppSidebar = () => {
                   : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
               )}
             >
-              <item.icon
-                className={cn(
-                  "w-5 h-5 transition-colors",
-                  isActive ? "text-gold" : "text-foreground/60 group-hover:text-gold"
-                )}
-              />
+              {item.icon && (
+                <item.icon
+                  className={cn(
+                    "w-5 h-5 transition-colors",
+                    isActive ? "text-gold" : "text-foreground/60 group-hover:text-gold"
+                  )}
+                />
+              )}
               <span className="text-sm">{item.name}</span>
             </Link>
           );
