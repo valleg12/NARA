@@ -203,24 +203,24 @@ const Cashflow = () => {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-semibold text-foreground">
+          <h1 className="font-display text-2xl md:text-4xl font-semibold text-foreground">
             Vos Finances
           </h1>
-          <p className="text-foreground/60 mt-2">
+          <p className="text-foreground/60 mt-1 md:mt-2 text-sm md:text-base">
             Comptabilité simplifiée et transparente
           </p>
         </div>
-        <Button variant="gold" size="lg" onClick={() => setIsUploadModalOpen(true)}>
+        <Button variant="gold" size="lg" onClick={() => setIsUploadModalOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-5 w-5" />
           Créer une facture
         </Button>
       </div>
 
       {/* Chatbox - Au-dessus des statistiques */}
-      <Card className="border-border/50 h-[calc(100vh-300px)] flex flex-col">
+      <Card className="border-border/50 h-[calc(100vh-400px)] md:h-[calc(100vh-300px)] flex flex-col">
         <CardHeader>
           <CardTitle className="font-display text-xl font-semibold">
             Chat avec l'agent financier NARA
@@ -329,7 +329,7 @@ const Cashflow = () => {
       </Card>
 
       {/* Financial Overview */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <Card className="border-border/50 hover-lift transition-all duration-400">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-foreground/70">
@@ -401,8 +401,8 @@ const Cashflow = () => {
       </Card>
 
       {/* Invoices List */}
-      <div className="space-y-4">
-        <h2 className="font-display text-2xl font-semibold text-foreground">Factures récentes</h2>
+      <div className="space-y-3 md:space-y-4">
+        <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground">Factures récentes</h2>
         <Card className="border-border/50">
           <CardContent className="pt-6">
             <div className="space-y-4">
@@ -422,9 +422,9 @@ const Cashflow = () => {
                       <p className="text-sm text-foreground/60">{invoice.client}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
+                  <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-6">
                     <div className="text-right">
-                      <p className="font-semibold text-foreground">{invoice.amount} €</p>
+                      <p className="font-semibold text-foreground text-sm md:text-base">{invoice.amount} €</p>
                       <p className="text-xs text-foreground/60">{invoice.date}</p>
                     </div>
                     <Badge className={getStatusColor(invoice.status)}>

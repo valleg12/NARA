@@ -355,22 +355,22 @@ const Compliance = () => {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-semibold text-foreground">Votre Journée</h1>
-          <p className="text-foreground/60 mt-2">
+          <h1 className="font-display text-2xl md:text-4xl font-semibold text-foreground">Votre Journée</h1>
+          <p className="text-foreground/60 mt-1 md:mt-2 text-sm md:text-base">
             {emails.length} email{emails.length > 1 ? "s" : ""} analysé{emails.length > 1 ? "s" : ""} et classé{emails.length > 1 ? "s" : ""}
           </p>
         </div>
-        <Button variant="outline" size="lg" onClick={fetchEmails} disabled={isLoading}>
+        <Button variant="outline" size="lg" onClick={fetchEmails} disabled={isLoading} className="w-full sm:w-auto">
           <RefreshCw className={`mr-2 h-5 w-5 ${isLoading ? "animate-spin" : ""}`} />
           Actualiser
         </Button>
       </div>
 
       {/* Dashboards principaux */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         {/* Emails non lus / À faire aujourd'hui */}
         <Card className="border-border/50">
           <CardHeader>
@@ -418,18 +418,18 @@ const Compliance = () => {
 
       {/* Section Calendrier */}
       <Card className="border-border/50">
-        <CardHeader>
-            <div className="flex items-center justify-between mb-4">
-              <CardTitle className="text-xl font-display font-semibold flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gold" />
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <CardTitle className="text-lg md:text-xl font-display font-semibold flex items-center gap-2">
+                <Calendar className="w-4 md:w-5 h-4 md:h-5 text-gold" />
                 Calendrier des événements
               </CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => navigateWeek('prev')}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 flex-1 sm:flex-none"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -437,7 +437,7 @@ const Compliance = () => {
                   variant="outline"
                   size="sm"
                   onClick={goToToday}
-                  className="h-8 px-3 text-xs"
+                  className="h-8 px-3 text-xs flex-1 sm:flex-none"
                 >
                   Aujourd'hui
                 </Button>
@@ -445,13 +445,13 @@ const Compliance = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => navigateWeek('next')}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 flex-1 sm:flex-none"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             </div>
-            <div className="text-sm text-foreground/60">
+            <div className="text-xs md:text-sm text-foreground/60">
               {weekStart.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} -{" "}
               {new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString("fr-FR", {
                 day: "numeric",
@@ -461,16 +461,16 @@ const Compliance = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-2 overflow-x-auto">
               {/* En-têtes des jours */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
+              <div className="grid grid-cols-7 gap-1 mb-2 min-w-[600px]">
                 {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day, index) => (
                   <div
                     key={day}
                     className="text-center text-xs font-semibold text-foreground/70 py-2 border-b border-border/50"
                   >
                     <div>{day}</div>
-                    <div className="text-sm mt-1">
+                    <div className="text-xs md:text-sm mt-1">
                       {weekDays[index].toLocaleDateString("fr-FR", { day: "numeric" })}
                     </div>
                   </div>
@@ -478,7 +478,7 @@ const Compliance = () => {
               </div>
 
               {/* Grille du calendrier */}
-              <div className="grid grid-cols-7 gap-1 min-h-[400px]">
+              <div className="grid grid-cols-7 gap-1 min-h-[300px] md:min-h-[400px] min-w-[600px]">
                 {weekDays.map((day, dayIndex) => {
                   const dayKey = day.toISOString().split('T')[0];
                   const dayEvents = eventsByDay[dayKey] || [];
@@ -488,12 +488,12 @@ const Compliance = () => {
                   return (
                     <div
                       key={dayKey}
-                      className={`border border-border/50 rounded-lg p-2 min-h-[80px] ${
+                      className={`border border-border/50 rounded-lg p-1 md:p-2 min-h-[60px] md:min-h-[80px] ${
                         isToday ? "bg-gold/5 border-gold/30" : "bg-background"
                       }`}
                     >
-                      <div className="space-y-1">
-                        {dayEvents.slice(0, 3).map((event) => {
+                      <div className="space-y-0.5 md:space-y-1">
+                        {dayEvents.slice(0, 2).map((event) => {
                           const eventTime = new Date(event.date);
                           const timeStr = eventTime.toLocaleTimeString("fr-FR", {
                             hour: "2-digit",
@@ -503,19 +503,20 @@ const Compliance = () => {
                           return (
                             <div
                               key={event.id}
-                              className="text-xs p-1.5 rounded bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 cursor-pointer transition-colors"
+                              className="text-[10px] md:text-xs p-1 md:p-1.5 rounded bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 cursor-pointer transition-colors"
                               onClick={() => setSelectedEvent(event)}
                               title={event.title}
                             >
                               <div className="font-semibold text-purple-700 truncate">
-                                {timeStr} - {event.title}
+                                <span className="hidden sm:inline">{timeStr} - </span>
+                                <span className="truncate">{event.title}</span>
                               </div>
                             </div>
                           );
                         })}
-                        {dayEvents.length > 3 && (
-                          <div className="text-xs text-foreground/60 text-center py-1">
-                            +{dayEvents.length - 3} autre{dayEvents.length - 3 > 1 ? "s" : ""}
+                        {dayEvents.length > 2 && (
+                          <div className="text-[10px] md:text-xs text-foreground/60 text-center py-0.5 md:py-1">
+                            +{dayEvents.length - 2} autre{dayEvents.length - 2 > 1 ? "s" : ""}
                           </div>
                         )}
                       </div>
@@ -527,14 +528,14 @@ const Compliance = () => {
           </CardContent>
         </Card>
 
-      {/* Vue d'ensemble des opportunités */}
-      <Card className="border-border/50">
+        {/* Vue d'ensemble des opportunités */}
+        <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="text-xl font-display font-semibold flex items-center gap-2">
-              <Briefcase className="w-5 h-5 text-gold" />
+            <CardTitle className="text-lg md:text-xl font-display font-semibold flex items-center gap-2">
+              <Briefcase className="w-4 md:w-5 h-4 md:h-5 text-gold" />
               Vue d'ensemble des opportunités
             </CardTitle>
-            <p className="text-sm text-foreground/60 mt-2">
+            <p className="text-xs md:text-sm text-foreground/60 mt-1 md:mt-2">
               Toutes vos opportunités sur un tableau de bord centralisé
             </p>
           </CardHeader>

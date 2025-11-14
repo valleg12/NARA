@@ -139,25 +139,25 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-8">
       {/* Welcome Message */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="font-display text-4xl font-semibold text-foreground">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="space-y-1 md:space-y-2">
+          <h1 className="font-display text-2xl md:text-4xl font-semibold text-foreground">
             Bonjour NARAGent, bienvenue dans votre univers.
           </h1>
-          <p className="text-foreground/60 text-lg">
+          <p className="text-foreground/60 text-sm md:text-lg">
             Voici votre aperçu quotidien
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading}>
+        <Button variant="outline" size="sm" onClick={fetchData} disabled={isLoading} className="w-full sm:w-auto">
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           Actualiser
         </Button>
       </div>
 
       {/* Overview Cards */}
-      <div className="grid md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         <Card className="border-border/50 hover-lift transition-all duration-400">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-foreground/70">
@@ -331,11 +331,11 @@ const Dashboard = () => {
         </Card>
 
       {/* Quick Actions */}
-      <div className="space-y-4">
-        <h2 className="font-display text-2xl font-semibold text-foreground">
+      <div className="space-y-3 md:space-y-4">
+        <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground">
           Actions rapides
         </h2>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
           <Button
             variant="gold"
             size="lg"
@@ -403,7 +403,7 @@ const Dashboard = () => {
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-2">
                 <Label htmlFor="task-date">Date *</Label>
                 <Input

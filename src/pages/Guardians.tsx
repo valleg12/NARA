@@ -279,17 +279,17 @@ const Guardians = () => {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-semibold text-foreground">
+          <h1 className="font-display text-2xl md:text-4xl font-semibold text-foreground">
             Vos Contrats
           </h1>
-          <p className="text-foreground/60 mt-2">
+          <p className="text-foreground/60 mt-1 md:mt-2 text-sm md:text-base">
             Protection juridique intelligente pour votre carrière
           </p>
         </div>
-        <Button variant="gold" size="lg" onClick={() => setIsUploadModalOpen(true)}>
+        <Button variant="gold" size="lg" onClick={() => setIsUploadModalOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-5 w-5" />
           Soumettre un contrat
         </Button>
@@ -314,9 +314,9 @@ const Guardians = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Contract List */}
-          <div className="lg:col-span-1 space-y-4">
+          <div className="lg:col-span-1 space-y-3 md:space-y-4">
             {contracts.map((contract) => (
               <Card
                 key={contract.id}
@@ -414,7 +414,7 @@ const Guardians = () => {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-border/50 h-[calc(100vh-200px)] flex flex-col">
+              <Card className="border-border/50 h-[calc(100vh-300px)] md:h-[calc(100vh-200px)] flex flex-col">
                 <CardHeader>
                   <CardTitle className="font-display text-xl font-semibold">
                     Chat avec l'agent juridique NARA
@@ -533,15 +533,15 @@ const Guardians = () => {
       )}
 
       {/* Section Stockage des contrats - en dessous du chatbot */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="space-y-3 md:space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-2xl font-semibold text-foreground">Stockage des contrats</h2>
-            <p className="text-foreground/60 mt-1 text-sm">
+            <h2 className="font-display text-xl md:text-2xl font-semibold text-foreground">Stockage des contrats</h2>
+            <p className="text-foreground/60 mt-1 text-xs md:text-sm">
               Tous vos contrats analysés et leurs résumés
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchStoredContracts} disabled={isLoadingContracts}>
+          <Button variant="outline" size="sm" onClick={fetchStoredContracts} disabled={isLoadingContracts} className="w-full sm:w-auto">
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingContracts ? "animate-spin" : ""}`} />
             Actualiser
           </Button>

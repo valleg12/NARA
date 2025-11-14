@@ -1,6 +1,7 @@
 import { Settings, LogOut, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import logo from "@/assets/logo.svg";
 
 const navigation = [
@@ -10,28 +11,41 @@ const navigation = [
   { name: "ORBIT", href: "/app/compliance" },
 ];
 
-const AppSidebar = () => {
+interface AppSidebarProps {
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  mobile?: boolean;
+}
+
+const AppSidebar = ({ isOpen = false, onOpenChange, mobile = false }: AppSidebarProps) => {
   const location = useLocation();
 
-  return (
-    <aside className="w-64 min-h-screen bg-muted/20 border-r border-border/50 flex flex-col">
+  const handleLinkClick = () => {
+    if (mobile && onOpenChange) {
+      onOpenChange(false);
+    }
+  };
+
+  const SidebarContent = () => (
+    <div className="w-64 min-h-screen bg-muted/20 border-r border-border/50 flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-border/50">
-        <Link to="/app" className="flex items-center">
-          <img src={logo} alt="NARA" className="h-32 w-auto" />
+      <div className="p-4 md:p-6 border-b border-border/50">
+        <Link to="/app" onClick={handleLinkClick} className="flex items-center">
+          <img src={logo} alt="NARA" className="h-24 md:h-32 w-auto" />
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-2 md:p-4 space-y-2">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
             <Link
               key={item.name}
               to={item.href}
+              onClick={handleLinkClick}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 group",
+                "flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg transition-all duration-300 group",
                 isActive
                   ? "bg-gold/10 text-foreground font-semibold"
                   : "text-foreground/70 hover:bg-muted/50 hover:text-foreground"
@@ -44,24 +58,26 @@ const AppSidebar = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-border/50 space-y-2">
+      <div className="p-2 md:p-4 border-t border-border/50 space-y-2">
         <Link
           to="/"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground/70 hover:bg-muted/50 hover:text-foreground transition-all duration-300 group"
+          onClick={handleLinkClick}
+          className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg text-foreground/70 hover:bg-muted/50 hover:text-foreground transition-all duration-300 group"
         >
-          <ArrowLeft className="w-5 h-5 text-foreground/60 group-hover:text-gold transition-colors" />
+          <ArrowLeft className="w-4 md:w-5 h-4 md:h-5 text-foreground/60 group-hover:text-gold transition-colors" />
           <span className="text-sm">Retour au site</span>
         </Link>
 
         <Link
           to="/app/settings"
-          className="flex items-center gap-3 px-4 py-3 rounded-lg text-foreground/70 hover:bg-muted/50 hover:text-foreground transition-all duration-300 group"
+          onClick={handleLinkClick}
+          className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3 rounded-lg text-foreground/70 hover:bg-muted/50 hover:text-foreground transition-all duration-300 group"
         >
-          <Settings className="w-5 h-5 text-foreground/60 group-hover:text-gold transition-colors" />
+          <Settings className="w-4 md:w-5 h-4 md:h-5 text-foreground/60 group-hover:text-gold transition-colors" />
           <span className="text-sm">Paramètres</span>
         </Link>
         
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-3 px-3 md:px-4 py-2 md:py-3">
           <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-sm font-semibold text-foreground">
             NG
           </div>
@@ -74,8 +90,20 @@ const AppSidebar = () => {
           </div>
         </div>
       </div>
-    </aside>
+    </div>
   );
+
+  if (mobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent side="left" className="w-64 p-0">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return <SidebarContent />;
 };
 
 export default AppSidebar;
