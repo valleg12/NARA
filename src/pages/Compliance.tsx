@@ -61,7 +61,6 @@ const Compliance = () => {
   const importantEmails = EmailService.getImportantEmails(emails);
   const todayEmails = EmailService.getTodayEmails(emails);
   const upcomingEmails = EmailService.getUpcomingEmails(emails);
-  const completedEmails = EmailService.getCompletedEmails(emails);
 
   const toggleCategory = (categoryName: string) => {
     setOpenCategories((prev) => {
@@ -207,19 +206,16 @@ const Compliance = () => {
               À faire aujourd'hui ({unreadEmails.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             {unreadEmails.length === 0 ? (
               <div className="text-center py-8">
                 <CheckSquare className="w-12 h-12 text-foreground/30 mx-auto mb-3" />
                 <p className="text-foreground/60">Aucun email non lu</p>
               </div>
             ) : (
-              unreadEmails.slice(0, 5).map((email) => renderEmailItem(email))
-            )}
-            {unreadEmails.length > 5 && (
-              <p className="text-xs text-foreground/50 text-center">
-                +{unreadEmails.length - 5} autre{unreadEmails.length - 5 > 1 ? "s" : ""}
-              </p>
+              <div className="max-h-[360px] overflow-y-auto space-y-4 pr-2">
+                {unreadEmails.map((email) => renderEmailItem(email))}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -232,19 +228,16 @@ const Compliance = () => {
               Importants ({importantEmails.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             {importantEmails.length === 0 ? (
               <div className="text-center py-8">
                 <Star className="w-12 h-12 text-foreground/30 mx-auto mb-3" />
                 <p className="text-foreground/60">Aucun email important</p>
               </div>
             ) : (
-              importantEmails.slice(0, 5).map((email) => renderEmailItem(email))
-            )}
-            {importantEmails.length > 5 && (
-              <p className="text-xs text-foreground/50 text-center">
-                +{importantEmails.length - 5} autre{importantEmails.length - 5 > 1 ? "s" : ""}
-              </p>
+              <div className="max-h-[360px] overflow-y-auto space-y-4 pr-2">
+                {importantEmails.map((email) => renderEmailItem(email))}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -301,32 +294,6 @@ const Compliance = () => {
                 </Collapsible>
               );
             })}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Emails complétés */}
-      {completedEmails.length > 0 && (
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-xl font-display font-semibold">Terminés</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {completedEmails.map((email) => (
-              <div
-                key={email.id}
-                className="flex items-center gap-4 p-3 rounded-lg bg-muted/20 cursor-pointer hover:bg-muted/30 transition-colors"
-                onClick={() => setSelectedEmail(email)}
-              >
-                <CheckSquare className="w-4 h-4 text-foreground/40 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground line-through">{email.subject || "Sans objet"}</p>
-                  {email.from_name && (
-                    <p className="text-xs text-foreground/50">De: {email.from_name}</p>
-                  )}
-                </div>
-              </div>
-            ))}
           </CardContent>
         </Card>
       )}
