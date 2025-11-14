@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import EmailService, { type Email, type EmailCategory, type CalendarEvent } from "@/services/EmailService";
-import { Clock } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
 
 const Compliance = () => {
   const [emails, setEmails] = useState<Email[]>([]);
@@ -43,6 +43,7 @@ const Compliance = () => {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [currentWeek, setCurrentWeek] = useState(new Date(2025, 0, 1)); // 1er janvier 2025
 
   const fetchEmails = async () => {
     setIsLoading(true);
@@ -124,10 +125,129 @@ const Compliance = () => {
     });
   };
 
+  // Générer des événements de test basés sur les emails réels
+  const generateTestEvents = (emails: Email[]): CalendarEvent[] => {
+    const testEvents: CalendarEvent[] = [];
+    const now = new Date(2025, 0, 1); // 1er janvier 2025
+    
+    // Prendre les emails d'invitation existants et créer des événements pour les prochaines semaines
+    const invitationEmails = EmailService.getInvitationEmails(emails);
+    
+    // Si on a des emails réels, les utiliser
+    invitationEmails.slice(0, 10).forEach((email, index) => {
+      const eventDate = new Date(now);
+      eventDate.setDate(eventDate.getDate() + (index * 2) + Math.floor(Math.random() * 7));
+      eventDate.setHours(10 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 4) * 15, 0, 0);
+      
+      testEvents.push({
+        id: `test-${email.id}-${index}`,
+        title: email.subject || `Événement ${index + 1}`,
+        date: eventDate,
+        email: email,
+        description: email.snippet || email.body_text?.substring(0, 200),
+        location: email.from_name ? `Organisé par ${email.from_name}` : undefined,
+      });
+    });
+    
+    // Ajouter des événements de test supplémentaires pour remplir le calendrier
+    const eventTitles = [
+      "Vernissage exposition",
+      "Soirée de lancement",
+      "Conférence créative",
+      "Workshop design",
+      "Défilé de mode",
+      "Salon professionnel",
+      "Atelier photo",
+      "Événement networking",
+      "Showroom produit",
+      "Réunion partenariat",
+    ];
+    
+    for (let i = 0; i < 15; i++) {
+      const eventDate = new Date(now);
+      eventDate.setDate(eventDate.getDate() + i * 2 + Math.floor(Math.random() * 3));
+      eventDate.setHours(9 + Math.floor(Math.random() * 10), Math.floor(Math.random() * 4) * 15, 0, 0);
+      
+      const randomTitle = eventTitles[Math.floor(Math.random() * eventTitles.length)];
+      
+      testEvents.push({
+        id: `test-event-${i}`,
+        title: randomTitle,
+        date: eventDate,
+        email: {
+          id: `test-email-${i}`,
+          subject: randomTitle,
+          from_name: "Organisateur",
+          body_text: `Description de l'événement ${randomTitle}`,
+        } as Email,
+        description: `Événement ${randomTitle} - Détails à venir`,
+        location: "Paris, France",
+      });
+    }
+    
+    return testEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
+  };
+
+  // Utiliser les événements de test si pas assez d'événements réels
+  const allCalendarEvents = calendarEvents.length > 5 
+    ? calendarEvents 
+    : generateTestEvents(emails);
+
+  // Obtenir le début de la semaine (lundi)
+  const getWeekStart = (date: Date): Date => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajuster pour lundi = 1
+    return new Date(d.setDate(diff));
+  };
+
+  // Obtenir les jours de la semaine
+  const getWeekDays = (weekStart: Date): Date[] => {
+    const days: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(weekStart);
+      day.setDate(day.getDate() + i);
+      days.push(day);
+    }
+    return days;
+  };
+
+  const weekStart = getWeekStart(currentWeek);
+  const weekDays = getWeekDays(weekStart);
+  const weekEvents = allCalendarEvents.filter((event) => {
+    const eventDate = new Date(event.date);
+    eventDate.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    return eventDate >= weekStart && eventDate < weekEnd;
+  });
+
+  // Grouper les événements par jour
+  const eventsByDay = weekDays.reduce((acc, day) => {
+    const dayKey = day.toISOString().split('T')[0];
+    acc[dayKey] = weekEvents.filter((event) => {
+      const eventDate = new Date(event.date);
+      return eventDate.toISOString().split('T')[0] === dayKey;
+    });
+    return acc;
+  }, {} as Record<string, CalendarEvent[]>);
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    setCurrentWeek((prev) => {
+      const newDate = new Date(prev);
+      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+      return newDate;
+    });
+  };
+
+  const goToToday = () => {
+    setCurrentWeek(new Date(2025, 0, 1));
+  };
+
   // Prochains événements (7 prochains jours)
-  const upcomingEvents = calendarEvents
+  const upcomingEvents = allCalendarEvents
     .filter((event) => {
-      const today = new Date();
+      const today = new Date(2025, 0, 1);
       today.setHours(0, 0, 0, 0);
       const eventDate = new Date(event.date);
       eventDate.setHours(0, 0, 0, 0);
@@ -291,85 +411,114 @@ const Compliance = () => {
 
       {/* Section Calendrier et Opportunités */}
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Calendrier des événements */}
+        {/* Calendrier des événements - Vue semaine */}
         <Card className="border-border/50">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <CardTitle className="text-xl font-display font-semibold flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-gold" />
                 Calendrier des événements
               </CardTitle>
-              <p className="text-sm text-foreground/60">
-                Mise à jour automatique depuis vos emails
-              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateWeek('prev')}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={goToToday}
+                  className="h-8 px-3 text-xs"
+                >
+                  Aujourd'hui
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigateWeek('next')}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="text-sm text-foreground/60">
+              {weekStart.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })} -{" "}
+              {new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
             </div>
           </CardHeader>
           <CardContent>
-            {calendarEvents.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-foreground/30 mx-auto mb-3" />
-                <p className="text-foreground/60">Aucun événement à venir</p>
-                <p className="text-xs text-foreground/50 mt-2">
-                  Les événements proposés par email apparaîtront ici automatiquement
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {upcomingEvents.length > 0 && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-gold" />
-                      Prochains 7 jours
-                    </h3>
-                    <div className="space-y-2">
-                      {upcomingEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className="flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/20 transition-colors cursor-pointer"
-                          onClick={() => setSelectedEvent(event)}
-                        >
-                          <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                            <Calendar className="w-5 h-5 text-purple-700" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground mb-1">{event.title}</p>
-                            <p className="text-xs text-foreground/60">{formatShortDate(event.date)}</p>
-                            {event.description && (
-                              <p className="text-xs text-foreground/50 mt-1 line-clamp-1">{event.description}</p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+            <div className="space-y-2">
+              {/* En-têtes des jours */}
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((day, index) => (
+                  <div
+                    key={day}
+                    className="text-center text-xs font-semibold text-foreground/70 py-2 border-b border-border/50"
+                  >
+                    <div>{day}</div>
+                    <div className="text-sm mt-1">
+                      {weekDays[index].toLocaleDateString("fr-FR", { day: "numeric" })}
                     </div>
                   </div>
-                )}
-                
-                {calendarEvents.length > upcomingEvents.length && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground mb-3">
-                      Tous les événements ({calendarEvents.length})
-                    </h3>
-                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                      {calendarEvents.map((event) => (
-                        <div
-                          key={event.id}
-                          className="flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:bg-muted/20 transition-colors cursor-pointer"
-                          onClick={() => setSelectedEvent(event)}
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
-                            <Calendar className="w-4 h-4 text-purple-700" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground mb-1">{event.title}</p>
-                            <p className="text-xs text-foreground/60">{formatShortDate(event.date)}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
-            )}
+
+              {/* Grille du calendrier */}
+              <div className="grid grid-cols-7 gap-1 min-h-[400px]">
+                {weekDays.map((day, dayIndex) => {
+                  const dayKey = day.toISOString().split('T')[0];
+                  const dayEvents = eventsByDay[dayKey] || [];
+                  const isToday =
+                    day.toDateString() === new Date(2025, 0, 1).toDateString();
+
+                  return (
+                    <div
+                      key={dayKey}
+                      className={`border border-border/50 rounded-lg p-2 min-h-[80px] ${
+                        isToday ? "bg-gold/5 border-gold/30" : "bg-background"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        {dayEvents.slice(0, 3).map((event) => {
+                          const eventTime = new Date(event.date);
+                          const timeStr = eventTime.toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          });
+
+                          return (
+                            <div
+                              key={event.id}
+                              className="text-xs p-1.5 rounded bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 cursor-pointer transition-colors"
+                              onClick={() => setSelectedEvent(event)}
+                              title={event.title}
+                            >
+                              <div className="font-semibold text-purple-700 truncate">
+                                {timeStr} - {event.title}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {dayEvents.length > 3 && (
+                          <div className="text-xs text-foreground/60 text-center py-1">
+                            +{dayEvents.length - 3} autre{dayEvents.length - 3 > 1 ? "s" : ""}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -491,9 +640,6 @@ const Compliance = () => {
         <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="text-xl font-display font-semibold">Emails classés par catégorie</CardTitle>
-            <p className="text-sm text-foreground/60 mt-2">
-              Classification automatique basée sur le contenu des emails
-            </p>
           </CardHeader>
           <CardContent className="space-y-3">
             {categories.map((category) => {
