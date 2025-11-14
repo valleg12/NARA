@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, type ChangeEvent, type DragEvent } from "react";
-import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus, X, Send, Bot, User, Loader2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus, X, Send, Bot, User, Loader2, RefreshCw, ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -260,6 +261,21 @@ const Guardians = () => {
       }
       return newSet;
     });
+  };
+
+  const copyResumeToClipboard = async (resume: string) => {
+    if (!resume || resume === "Aucun résumé disponible") {
+      toast.error("Aucun résumé à copier");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(resume);
+      toast.success("Résumé copié dans le presse-papiers");
+    } catch (err) {
+      console.error("Erreur lors de la copie:", err);
+      toast.error("Erreur lors de la copie du résumé");
+    }
   };
 
   return (
@@ -593,7 +609,18 @@ const Guardians = () => {
                       <CardContent className="pt-0">
                         <div className="space-y-3">
                           <div>
-                            <h4 className="text-sm font-semibold text-foreground mb-2">Résumé</h4>
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="text-sm font-semibold text-foreground">Résumé</h4>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyResumeToClipboard(contract.resume || "")}
+                                className="h-7 px-2 text-xs"
+                              >
+                                <Copy className="w-3 h-3 mr-1" />
+                                Copier
+                              </Button>
+                            </div>
                             <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
                               <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
                                 {contract.resume || "Aucun résumé disponible"}
