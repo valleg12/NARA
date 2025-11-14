@@ -5,7 +5,7 @@
 
 const fetch = require("node-fetch");
 
-const N8N_WEBHOOK_URL = "https://api.ia2s.app/webhook-test/pdf-to-dust";
+const N8N_WEBHOOK_URL = "https://api.ia2s.app/webhook/pdf-to-dust";
 
 exports.handler = async (event, context) => {
   context.callbackWaitsForEmptyEventLoop = false;
