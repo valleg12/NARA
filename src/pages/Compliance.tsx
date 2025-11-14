@@ -44,7 +44,7 @@ const Compliance = () => {
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
-  const [currentWeek, setCurrentWeek] = useState(new Date(2025, 0, 1)); // 1er janvier 2025
+  const [currentWeek, setCurrentWeek] = useState(new Date(2025, 10, 14)); // 14 novembre 2025
 
   const fetchEmails = async () => {
     setIsLoading(true);
@@ -129,7 +129,7 @@ const Compliance = () => {
   // Générer des événements de test basés sur les emails réels
   const generateTestEvents = (emails: Email[]): CalendarEvent[] => {
     const testEvents: CalendarEvent[] = [];
-    const now = new Date(2025, 0, 1); // 1er janvier 2025
+    const now = new Date(2025, 10, 14); // 14 novembre 2025
     
     // Prendre les emails d'invitation existants et créer des événements pour les prochaines semaines
     const invitationEmails = EmailService.getInvitationEmails(emails);
@@ -248,13 +248,13 @@ const Compliance = () => {
   };
 
   const goToToday = () => {
-    setCurrentWeek(new Date(2025, 0, 1));
+    setCurrentWeek(new Date(2025, 10, 14));
   };
 
   // Prochains événements (7 prochains jours)
   const upcomingEvents = allCalendarEvents
     .filter((event) => {
-      const today = new Date(2025, 0, 1);
+      const today = new Date(2025, 10, 14);
       today.setHours(0, 0, 0, 0);
       const eventDate = new Date(event.date);
       eventDate.setHours(0, 0, 0, 0);
@@ -388,7 +388,7 @@ const Compliance = () => {
             ) : (
               <div className="max-h-[360px] overflow-y-auto space-y-4 pr-2">
                 {unreadEmails.map((email) => renderEmailItem(email))}
-              </div>
+                  </div>
             )}
           </CardContent>
         </Card>
@@ -406,7 +406,7 @@ const Compliance = () => {
               <div className="text-center py-8">
                 <Star className="w-12 h-12 text-foreground/30 mx-auto mb-3" />
                 <p className="text-foreground/60">Aucun email important</p>
-              </div>
+                </div>
             ) : (
               <div className="max-h-[360px] overflow-y-auto space-y-4 pr-2">
                 {importantEmails.map((email) => renderEmailItem(email))}
@@ -418,7 +418,7 @@ const Compliance = () => {
 
       {/* Section Calendrier */}
       <Card className="border-border/50">
-          <CardHeader>
+        <CardHeader>
             <div className="flex items-center justify-between mb-4">
               <CardTitle className="text-xl font-display font-semibold flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-gold" />
@@ -483,7 +483,7 @@ const Compliance = () => {
                   const dayKey = day.toISOString().split('T')[0];
                   const dayEvents = eventsByDay[dayKey] || [];
                   const isToday =
-                    day.toDateString() === new Date(2025, 0, 1).toDateString();
+                    day.toDateString() === new Date(2025, 10, 14).toDateString();
 
                   return (
                     <div
@@ -621,8 +621,8 @@ const Compliance = () => {
                         {email.from_name && (
                           <p className="text-xs text-foreground/60">De: {email.from_name}</p>
                         )}
-                      </div>
-                    ))}
+              </div>
+            ))}
                   </div>
                 </div>
               )}
@@ -687,8 +687,8 @@ const Compliance = () => {
                 </Collapsible>
               );
             })}
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       )}
 
       {/* Popup pour afficher les détails d'un événement */}
