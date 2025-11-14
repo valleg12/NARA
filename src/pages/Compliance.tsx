@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import EmailService, { type Email, type EmailCategory, type CalendarEvent } from "@/services/EmailService";
+import CalendarEventService from "@/services/CalendarEventService";
 import { Clock, ChevronLeft, ChevronRight } from "lucide-react";
 
 const Compliance = () => {
@@ -188,9 +189,15 @@ const Compliance = () => {
     return testEvents.sort((a, b) => a.date.getTime() - b.date.getTime());
   };
 
+  // Récupérer les événements manuels ajoutés depuis le Dashboard
+  const manualEvents = CalendarEventService.getManualEvents();
+  
+  // Combiner les événements des emails et les événements manuels
+  const combinedEvents = [...calendarEvents, ...manualEvents];
+  
   // Utiliser les événements de test si pas assez d'événements réels
-  const allCalendarEvents = calendarEvents.length > 5 
-    ? calendarEvents 
+  const allCalendarEvents = combinedEvents.length > 5 
+    ? combinedEvents 
     : generateTestEvents(emails);
 
   // Obtenir le début de la semaine (lundi)
