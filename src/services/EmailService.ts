@@ -119,151 +119,154 @@ class EmailService {
    * Détecte la catégorie d'un email en analysant son contenu
    */
   private detectCategory(text: string, subject: string, email: Email): string {
-    // Utiliser la catégorie existante si disponible
+    // Utiliser la catégorie existante si disponible et qu'elle correspond aux nouvelles catégories
     if (email.category) {
-      return email.category;
-    }
-
-    // Analyser les labels Gmail
-    if (email.label_ids && email.label_ids.length > 0) {
-      const labelMap: Record<string, string> = {
-        INBOX: "Boîte de réception",
-        SENT: "Envoyés",
-        DRAFT: "Brouillons",
-        TRASH: "Corbeille",
-        SPAM: "Spam",
-        IMPORTANT: "Important",
-        STARRED: "Favoris",
-      };
-
-      for (const labelId of email.label_ids) {
-        if (labelMap[labelId]) {
-          return labelMap[labelId];
-        }
+      const validCategories = [
+        "Collaborations Non Rémunérées",
+        "Collaborations Rémunérées",
+        "Gifting",
+        "Invitation",
+        "A trier",
+      ];
+      if (validCategories.includes(email.category)) {
+        return email.category;
       }
     }
 
-    // Détection intelligente par mots-clés
-    const keywords: Record<string, string[]> = {
-      "Factures & Paiements": [
-        "facture",
-        "invoice",
-        "paiement",
-        "payment",
-        "billing",
-        "due",
-        "échéance",
-        "montant",
-        "€",
-        "euro",
-        "dollar",
-        "$",
-        "paypal",
-        "stripe",
-        "virement",
-      ],
-      "Contrats & Documents": [
-        "contrat",
-        "contract",
-        "signature",
-        "document",
-        "pdf",
-        "accord",
-        "convention",
-        "agreement",
-        "terms",
-        "conditions",
-      ],
-      "Réunions & Rendez-vous": [
-        "réunion",
-        "meeting",
-        "appel",
-        "call",
-        "zoom",
-        "teams",
-        "calendar",
-        "calendrier",
-        "rendez-vous",
-        "appointment",
-        "schedule",
-        "disponible",
-        "available",
-      ],
-      "Projets & Collaborations": [
-        "projet",
-        "project",
-        "collaboration",
-        "deadline",
-        "échéance",
-        "livraison",
-        "delivery",
-        "milestone",
-        "jalon",
-        "brief",
-        "cahier des charges",
-      ],
-      "Marketing & Communication": [
-        "newsletter",
-        "promotion",
-        "offre",
-        "campaign",
-        "marketing",
-        "publicité",
-        "advertising",
-        "social media",
-        "réseaux sociaux",
-      ],
-      "Support & Assistance": [
-        "support",
-        "help",
-        "assistance",
-        "ticket",
-        "issue",
-        "problem",
-        "problème",
-        "bug",
-        "error",
-        "erreur",
-      ],
-      "Notifications & Alertes": [
-        "notification",
-        "alert",
-        "alerte",
-        "reminder",
-        "rappel",
-        "confirmation",
-        "confirm",
-        "validation",
-      ],
-      "Réseaux Sociaux": [
-        "instagram",
-        "facebook",
-        "twitter",
-        "linkedin",
-        "tiktok",
-        "youtube",
-        "follow",
-        "abonné",
-        "subscriber",
-      ],
-    };
+    // Détection intelligente par mots-clés pour les nouvelles catégories
+    // Priorité : on vérifie d'abord les catégories spécifiques, puis on classe en "A trier"
 
-    // Chercher des correspondances de mots-clés
-    for (const [category, words] of Object.entries(keywords)) {
-      for (const word of words) {
-        if (text.includes(word)) {
-          return category;
-        }
+    // 1. Gifting - Détection prioritaire (cadeaux, produits offerts)
+    const giftingKeywords = [
+      "gift",
+      "cadeau",
+      "produit offert",
+      "échantillon",
+      "sample",
+      "gifting",
+      "produit gratuit",
+      "free product",
+      "cadeau gracieux",
+      "offert",
+      "gratuitement",
+      "gratuit",
+      "complémentaire",
+      "test produit",
+      "produit test",
+    ];
+    for (const keyword of giftingKeywords) {
+      if (text.includes(keyword)) {
+        return "Gifting";
       }
     }
 
-    // Catégorie par défaut basée sur l'état
-    if (email.is_important) return "Important";
-    if (email.is_starred) return "Favoris";
-    if (!email.is_read) return "Non lus";
-    if (email.has_attachments) return "Avec pièces jointes";
+    // 2. Invitation - Événements, invitations
+    const invitationKeywords = [
+      "invitation",
+      "invite",
+      "event",
+      "événement",
+      "soirée",
+      "vernissage",
+      "lancement",
+      "défilé",
+      "showroom",
+      "salon",
+      "exposition",
+      "expo",
+      "conférence",
+      "workshop",
+      "atelier",
+      "rsvp",
+      "confirmer présence",
+      "confirmez votre présence",
+      "nous serions ravis",
+      "serions ravis de vous",
+    ];
+    for (const keyword of invitationKeywords) {
+      if (text.includes(keyword)) {
+        return "Invitation";
+      }
+    }
 
-    return "Autres";
+    // 3. Collaborations Rémunérées - Mention explicite de rémunération/paiement
+    const paidCollaborationKeywords = [
+      "rémunération",
+      "remuneration",
+      "paiement",
+      "payment",
+      "tarif",
+      "rate",
+      "budget",
+      "honoraires",
+      "fees",
+      "€",
+      "euro",
+      "dollar",
+      "$",
+      "montant",
+      "amount",
+      "facture",
+      "invoice",
+      "contrat rémunéré",
+      "paid collaboration",
+      "collaboration payée",
+      "sponsorisé",
+      "sponsored",
+      "partenariat rémunéré",
+      "paid partnership",
+      "compensation",
+      "rémunéré",
+      "payé",
+      "paid",
+    ];
+    const hasPaidKeywords = paidCollaborationKeywords.some((keyword) => text.includes(keyword));
+
+    // 4. Collaborations (général) - Mots-clés de collaboration
+    const collaborationKeywords = [
+      "collaboration",
+      "partenariat",
+      "partnership",
+      "collab",
+      "partenaires",
+      "partners",
+      "projet commun",
+      "projet ensemble",
+      "travail ensemble",
+      "working together",
+      "brand ambassador",
+      "ambassadeur",
+      "ambassadrice",
+      "influenceur",
+      "influenceuse",
+      "creator",
+      "créateur",
+      "créatrice",
+      "content creator",
+      "créateur de contenu",
+      "sponsor",
+      "sponsoring",
+    ];
+    const hasCollaborationKeywords = collaborationKeywords.some((keyword) => text.includes(keyword));
+
+    // Si collaboration + rémunération = Collaborations Rémunérées
+    if (hasCollaborationKeywords && hasPaidKeywords) {
+      return "Collaborations Rémunérées";
+    }
+
+    // Si collaboration sans rémunération = Collaborations Non Rémunérées
+    if (hasCollaborationKeywords && !hasPaidKeywords) {
+      return "Collaborations Non Rémunérées";
+    }
+
+    // Si rémunération mentionnée mais pas de mot-clé collaboration explicite
+    // On peut considérer que c'est une collaboration rémunérée
+    if (hasPaidKeywords && (text.includes("post") || text.includes("publication") || text.includes("story") || text.includes("reel"))) {
+      return "Collaborations Rémunérées";
+    }
+
+    // Par défaut : A trier
+    return "A trier";
   }
 
   /**
@@ -271,6 +274,14 @@ class EmailService {
    */
   private getCategoryMetadata(category: string): { icon: string; color: string } {
     const metadata: Record<string, { icon: string; color: string }> = {
+      // Nouvelles catégories principales
+      "Collaborations Rémunérées": { icon: "DollarSign", color: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" },
+      "Collaborations Non Rémunérées": { icon: "Briefcase", color: "bg-blue-500/10 text-blue-700 border-blue-500/20" },
+      "Gifting": { icon: "Star", color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20" },
+      "Invitation": { icon: "Calendar", color: "bg-purple-500/10 text-purple-700 border-purple-500/20" },
+      "A trier": { icon: "Mail", color: "bg-gray-500/10 text-gray-700 border-gray-500/20" },
+      
+      // Catégories de fallback (si jamais utilisées)
       "Boîte de réception": { icon: "Inbox", color: "bg-blue-500/10 text-blue-700 border-blue-500/20" },
       "Envoyés": { icon: "Send", color: "bg-green-500/10 text-green-700 border-green-500/20" },
       "Brouillons": { icon: "FileText", color: "bg-gray-500/10 text-gray-700 border-gray-500/20" },
@@ -280,18 +291,10 @@ class EmailService {
       "Favoris": { icon: "Star", color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20" },
       "Non lus": { icon: "Mail", color: "bg-purple-500/10 text-purple-700 border-purple-500/20" },
       "Avec pièces jointes": { icon: "Paperclip", color: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20" },
-      "Factures & Paiements": { icon: "DollarSign", color: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20" },
-      "Contrats & Documents": { icon: "FileText", color: "bg-blue-500/10 text-blue-700 border-blue-500/20" },
-      "Réunions & Rendez-vous": { icon: "Calendar", color: "bg-purple-500/10 text-purple-700 border-purple-500/20" },
-      "Projets & Collaborations": { icon: "Briefcase", color: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20" },
-      "Marketing & Communication": { icon: "Megaphone", color: "bg-pink-500/10 text-pink-700 border-pink-500/20" },
-      "Support & Assistance": { icon: "HelpCircle", color: "bg-orange-500/10 text-orange-700 border-orange-500/20" },
-      "Notifications & Alertes": { icon: "Bell", color: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20" },
-      "Réseaux Sociaux": { icon: "Share2", color: "bg-rose-500/10 text-rose-700 border-rose-500/20" },
       "Autres": { icon: "Mail", color: "bg-gray-500/10 text-gray-700 border-gray-500/20" },
     };
 
-    return metadata[category] || metadata["Autres"];
+    return metadata[category] || metadata["A trier"];
   }
 
   /**

@@ -378,7 +378,7 @@ const Compliance = () => {
             )}
             {selectedEmail?.body_html ? (
               <div>
-                <h4 className="text-sm font-semibold text-foreground mb-2">Contenu</h4>
+                <h4 className="text-sm font-semibold text-foreground mb-2">Résumé</h4>
                 <div
                   className="text-sm text-foreground/80 bg-muted/30 rounded-lg p-4 prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
@@ -386,7 +386,7 @@ const Compliance = () => {
               </div>
             ) : selectedEmail?.body_text ? (
               <div>
-                <h4 className="text-sm font-semibold text-foreground mb-2">Contenu</h4>
+                <h4 className="text-sm font-semibold text-foreground mb-2">Résumé</h4>
                 <div className="text-sm text-foreground/80 bg-muted/30 rounded-lg p-4 whitespace-pre-wrap">
                   {selectedEmail.body_text}
                 </div>
