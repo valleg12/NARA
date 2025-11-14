@@ -48,6 +48,15 @@ export interface EmailCategory {
   color: string;
 }
 
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  email: Email;
+  location?: string;
+  description?: string;
+}
+
 class EmailService {
   /**
    * Récupère tous les emails depuis Supabase
@@ -353,6 +362,148 @@ class EmailService {
         return dateB - dateA;
       })
       .slice(0, 10); // Limiter aux 10 derniers
+  }
+
+  /**
+   * Récupère les emails d'invitation (événements)
+   */
+  getInvitationEmails(emails: Email[]): Email[] {
+    return emails.filter((email) => {
+      const category = email.category || this.detectCategory(
+        `${email.subject || ""} ${email.snippet || ""} ${email.body_text || ""}`.toLowerCase(),
+        (email.subject || "").toLowerCase(),
+        email
+      );
+      return category === "Invitation";
+    });
+  }
+
+  /**
+   * Extrait les dates d'événements depuis le contenu d'un email
+   * Retourne la date extraite ou null si aucune date n'est trouvée
+   */
+  extractEventDate(email: Email): Date | null {
+    const text = `${email.subject || ""} ${email.body_text || ""} ${email.snippet || ""}`.toLowerCase();
+    
+    // Patterns de dates courants
+    const datePatterns = [
+      // Format: "le 15 janvier 2024", "le 15/01/2024", "le 15-01-2024"
+      /le\s+(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/i,
+      /le\s+(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+(\d{4})/i,
+      // Format: "15 janvier 2024", "15/01/2024"
+      /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/,
+      /(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)\s+(\d{4})/i,
+      // Format: "mardi 15 janvier", "mardi 15/01"
+      /(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+(\d{1,2})[\/\-](\d{1,2})/i,
+      /(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+(\d{1,2})\s+(janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)/i,
+    ];
+
+    const months: Record<string, number> = {
+      janvier: 0, février: 1, mars: 2, avril: 3, mai: 4, juin: 5,
+      juillet: 6, août: 7, septembre: 8, octobre: 9, novembre: 10, décembre: 11,
+    };
+
+    for (const pattern of datePatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        try {
+          let day: number, month: number, year: number;
+          
+          if (match[2] && months[match[2].toLowerCase()] !== undefined) {
+            // Format avec nom de mois
+            day = parseInt(match[1], 10);
+            month = months[match[2].toLowerCase()];
+            year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
+          } else {
+            // Format numérique
+            day = parseInt(match[1], 10);
+            month = parseInt(match[2], 10) - 1; // Les mois sont 0-indexés
+            year = match[3] ? parseInt(match[3], 10) : new Date().getFullYear();
+          }
+
+          const eventDate = new Date(year, month, day);
+          // Vérifier que la date est valide et dans le futur ou proche (30 jours)
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const maxDate = new Date();
+          maxDate.setDate(maxDate.getDate() + 365); // 1 an dans le futur
+
+          if (eventDate >= today && eventDate <= maxDate) {
+            return eventDate;
+          }
+        } catch (e) {
+          // Continuer avec le pattern suivant
+        }
+      }
+    }
+
+    // Si aucune date n'est trouvée, utiliser la date de réception comme fallback
+    if (email.received_at) {
+      const receivedDate = new Date(email.received_at);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const maxDate = new Date();
+      maxDate.setDate(maxDate.getDate() + 365);
+
+      if (receivedDate >= today && receivedDate <= maxDate) {
+        return receivedDate;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Récupère tous les événements pour le calendrier
+   */
+  getCalendarEvents(emails: Email[]): CalendarEvent[] {
+    const invitationEmails = this.getInvitationEmails(emails);
+    const events: CalendarEvent[] = [];
+
+    invitationEmails.forEach((email) => {
+      const eventDate = this.extractEventDate(email);
+      if (eventDate) {
+        events.push({
+          id: email.id,
+          title: email.subject || "Événement sans titre",
+          date: eventDate,
+          email: email,
+          description: email.snippet || email.body_text?.substring(0, 200),
+        });
+      }
+    });
+
+    // Trier par date
+    return events.sort((a, b) => a.date.getTime() - b.date.getTime());
+  }
+
+  /**
+   * Récupère les opportunités (collaborations, invitations, gifting)
+   */
+  getOpportunities(emails: Email[]): {
+    collaborations: Email[];
+    invitations: Email[];
+    gifting: Email[];
+  } {
+    const categorized = this.analyzeAndCategorizeEmails(emails);
+    
+    const collaborations = categorized
+      .filter((cat) => cat.name.includes("Collaboration"))
+      .flatMap((cat) => cat.emails);
+
+    const invitations = categorized
+      .filter((cat) => cat.name === "Invitation")
+      .flatMap((cat) => cat.emails);
+
+    const gifting = categorized
+      .filter((cat) => cat.name === "Gifting")
+      .flatMap((cat) => cat.emails);
+
+    return {
+      collaborations: collaborations.slice(0, 10), // Limiter à 10
+      invitations: invitations.slice(0, 10),
+      gifting: gifting.slice(0, 10),
+    };
   }
 }
 
