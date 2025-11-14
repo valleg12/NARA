@@ -409,10 +409,8 @@ const Compliance = () => {
         </Card>
       </div>
 
-      {/* Section Calendrier et Opportunités */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Calendrier des événements - Vue semaine */}
-        <Card className="border-border/50">
+      {/* Section Calendrier */}
+      <Card className="border-border/50">
           <CardHeader>
             <div className="flex items-center justify-between mb-4">
               <CardTitle className="text-xl font-display font-semibold flex items-center gap-2">
@@ -522,8 +520,8 @@ const Compliance = () => {
           </CardContent>
         </Card>
 
-        {/* Vue d'ensemble des opportunités */}
-        <Card className="border-border/50">
+      {/* Vue d'ensemble des opportunités */}
+      <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="text-xl font-display font-semibold flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-gold" />
@@ -633,7 +631,6 @@ const Compliance = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
 
       {/* Catégories intelligentes */}
       {categories.length > 0 && (
