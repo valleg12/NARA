@@ -1,10 +1,13 @@
-import { useRef, useState } from "react";
-import { TrendingUp, DollarSign, Clock, Plus, FileText, Send, Bot, User } from "lucide-react";
+import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { TrendingUp, DollarSign, Clock, Plus, FileText, Send, Bot, User, Upload, X, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import DustService from "@/services/DustService";
+import ContractService from "@/services/ContractService";
 
 type ChatMessage = {
   id: string;
@@ -44,7 +47,14 @@ const Cashflow = () => {
   const [isAgentLoading, setIsAgentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // États pour le modal d'upload de facture
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [isUploadingInvoice, setIsUploadingInvoice] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const invoiceFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -128,6 +138,70 @@ const Cashflow = () => {
     }
   };
 
+  // Gestion upload facture (vers N8N)
+  const handleInvoiceFileSelection = (file?: File) => {
+    if (!file) {
+      return;
+    }
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      setError("Seuls les fichiers PDF sont autorisés.");
+      setInvoiceFile(null);
+      return;
+    }
+    setError(null);
+    setInvoiceFile(file);
+  };
+
+  const handleInvoiceInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    handleInvoiceFileSelection(file);
+  };
+
+  const handleInvoiceDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer.files?.[0];
+    handleInvoiceFileSelection(file);
+  };
+
+  const handleInvoiceDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleUploadInvoice = async () => {
+    if (!invoiceFile) {
+      setError("Veuillez sélectionner un fichier PDF");
+      return;
+    }
+
+    setIsUploadingInvoice(true);
+    setError(null);
+    setUploadSuccess(false);
+
+    try {
+      const result = await ContractService.uploadContract(invoiceFile);
+      setUploadSuccess(true);
+      toast.success("Facture uploadée avec succès ! En cours de traitement...");
+      console.log("✅ Facture uploadée:", result);
+      
+      // Fermer le modal après 2 secondes
+      setTimeout(() => {
+        setIsUploadModalOpen(false);
+        setInvoiceFile(null);
+        setUploadSuccess(false);
+        if (invoiceFileInputRef.current) {
+          invoiceFileInputRef.current.value = "";
+        }
+      }, 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Une erreur est survenue lors de l'upload";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsUploadingInvoice(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -139,7 +213,7 @@ const Cashflow = () => {
             Comptabilité simplifiée et transparente
           </p>
         </div>
-        <Button variant="gold" size="lg">
+        <Button variant="gold" size="lg" onClick={() => setIsUploadModalOpen(true)}>
           <Plus className="mr-2 h-5 w-5" />
           Créer une facture
         </Button>
@@ -363,6 +437,106 @@ const Cashflow = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal d'upload de facture */}
+      <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Créer une facture</DialogTitle>
+            <DialogDescription>
+              Uploadez votre facture PDF. Elle sera analysée et traitée par notre système.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {error && (
+              <div className="text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                {error}
+              </div>
+            )}
+            
+            {uploadSuccess && (
+              <div className="text-sm text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" />
+                Facture uploadée avec succès ! En cours de traitement...
+              </div>
+            )}
+
+            {!invoiceFile ? (
+              <div
+                onDrop={handleInvoiceDrop}
+                onDragOver={handleInvoiceDragOver}
+                className="border-2 border-dashed border-border/50 rounded-lg p-8 text-center hover:border-gold/50 transition-colors cursor-pointer"
+                onClick={() => invoiceFileInputRef.current?.click()}
+              >
+                <Upload className="w-12 h-12 text-foreground/40 mx-auto mb-4" />
+                <p className="text-sm font-medium text-foreground mb-2">
+                  Glissez-déposez votre PDF ici
+                </p>
+                <p className="text-xs text-foreground/60 mb-4">ou</p>
+                <Button variant="outline" size="sm">
+                  Sélectionner un fichier
+                </Button>
+                <input
+                  ref={invoiceFileInputRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={handleInvoiceInputChange}
+                />
+              </div>
+            ) : (
+              <div className="flex items-start gap-3 rounded-lg border border-border/50 bg-background p-4">
+                <FileText className="w-8 h-8 text-gold flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{invoiceFile.name}</p>
+                  <p className="text-xs text-foreground/60">
+                    {(invoiceFile.size / 1024).toFixed(1)} Ko
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setInvoiceFile(null);
+                    if (invoiceFileInputRef.current) {
+                      invoiceFileInputRef.current.value = "";
+                    }
+                  }}
+                  className="text-foreground/60 hover:text-foreground flex-shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setInvoiceFile(null);
+                  setError(null);
+                  setUploadSuccess(false);
+                  if (invoiceFileInputRef.current) {
+                    invoiceFileInputRef.current.value = "";
+                  }
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="gold"
+                onClick={handleUploadInvoice}
+                disabled={!invoiceFile || isUploadingInvoice || uploadSuccess}
+              >
+                {isUploadingInvoice ? "Upload en cours..." : uploadSuccess ? "Uploadé ✓" : "Envoyer"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
