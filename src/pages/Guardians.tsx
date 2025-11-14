@@ -1,12 +1,14 @@
-import { useRef, useState, type ChangeEvent, type DragEvent } from "react";
-import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus, X, Send, Bot, User } from "lucide-react";
+import { useRef, useState, useEffect, type ChangeEvent, type DragEvent } from "react";
+import { FileText, Upload, AlertCircle, CheckCircle, Info, Plus, X, Send, Bot, User, Loader2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import DustService from "@/services/DustService";
 import ContractService from "@/services/ContractService";
+import SupabaseService, { type ContractSummary } from "@/services/SupabaseService";
 
 type ChatMessage = {
   id: string;
@@ -56,6 +58,11 @@ const Guardians = () => {
   const [contractFile, setContractFile] = useState<File | null>(null);
   const [isUploadingContract, setIsUploadingContract] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  // États pour le stockage des contrats
+  const [storedContracts, setStoredContracts] = useState<ContractSummary[]>([]);
+  const [isLoadingContracts, setIsLoadingContracts] = useState(true);
+  const [openContracts, setOpenContracts] = useState<Set<string>>(new Set());
 
   const contractFileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -198,6 +205,61 @@ const Guardians = () => {
       default:
         return "Archivé";
     }
+  };
+
+  // Fonctions pour le stockage des contrats
+  const fetchStoredContracts = async () => {
+    setIsLoadingContracts(true);
+    try {
+      const data = await SupabaseService.getContractSummaries();
+      setStoredContracts(data);
+    } catch (err) {
+      console.error("Erreur lors du chargement des contrats:", err);
+    } finally {
+      setIsLoadingContracts(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStoredContracts();
+  }, []);
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Date inconnue";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("fr-FR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return "Date invalide";
+    }
+  };
+
+  const getFileName = (contract: ContractSummary) => {
+    if (contract.file_name) {
+      return contract.file_name;
+    }
+    if (contract.contract_id) {
+      return `Contrat ${contract.contract_id}`;
+    }
+    return `Contrat ${contract.id.substring(0, 8)}...`;
+  };
+
+  const toggleContract = (contractId: string) => {
+    setOpenContracts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(contractId)) {
+        newSet.delete(contractId);
+      } else {
+        newSet.add(contractId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -453,6 +515,101 @@ const Guardians = () => {
           </div>
         </div>
       )}
+
+      {/* Section Stockage des contrats - en dessous du chatbot */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-foreground">Stockage des contrats</h2>
+            <p className="text-foreground/60 mt-1 text-sm">
+              Tous vos contrats analysés et leurs résumés
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={fetchStoredContracts} disabled={isLoadingContracts}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingContracts ? "animate-spin" : ""}`} />
+            Actualiser
+          </Button>
+        </div>
+
+        {isLoadingContracts ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 text-gold animate-spin mb-3" />
+              <p className="text-foreground/60 text-sm">Chargement des contrats...</p>
+            </CardContent>
+          </Card>
+        ) : storedContracts.length === 0 ? (
+          <Card className="border-border/50">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center mb-3">
+                <FileText className="w-6 h-6 text-gold" />
+              </div>
+              <p className="text-foreground/60 text-sm text-center">
+                Aucun contrat stocké. Les contrats soumis apparaîtront ici une fois analysés.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-3">
+            {storedContracts.map((contract) => {
+              const isOpen = openContracts.has(contract.id);
+              return (
+                <Collapsible
+                  key={contract.id}
+                  open={isOpen}
+                  onOpenChange={() => toggleContract(contract.id)}
+                >
+                  <Card className="border-border/50 hover-lift transition-all duration-300">
+                    <CollapsibleTrigger asChild>
+                      <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-8 h-8 rounded-lg bg-gold/10 flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-4 h-4 text-gold" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <CardTitle className="text-base font-semibold text-foreground mb-1">
+                                {getFileName(contract)}
+                              </CardTitle>
+                              {contract.created_at && (
+                                <p className="text-xs text-foreground/60">
+                                  {formatDate(contract.created_at)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="flex-shrink-0">
+                            {contract.id.substring(0, 8)}...
+                          </Badge>
+                          {isOpen ? (
+                            <ChevronUp className="w-4 h-4 text-foreground/60 ml-2" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-foreground/60 ml-2" />
+                          )}
+                        </div>
+                      </CardHeader>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <CardContent className="pt-0">
+                        <div className="space-y-3">
+                          <div>
+                            <h4 className="text-sm font-semibold text-foreground mb-2">Résumé</h4>
+                            <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
+                              <p className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">
+                                {contract.resume || "Aucun résumé disponible"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </CollapsibleContent>
+                  </Card>
+                </Collapsible>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Modal d'upload de contrat */}
       <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>

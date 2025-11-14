@@ -8,7 +8,6 @@ const navigation = [
   { name: "GUARDIANS", href: "/app/guardians" },
   { name: "FLOW", href: "/app/cashflow" },
   { name: "ORBIT", href: "/app/compliance" },
-  { name: "STOCKAGE", href: "/app/stockage" },
 ];
 
 const AppSidebar = () => {
